@@ -47,7 +47,10 @@ import {
   BarChart3,
   Activity,
   Zap,
+  LineChart,
 } from "lucide-react";
+import { RankingTrend, MentionTrend, generateMockTrendData, generateMockMentionData } from "@/components/charts/RankingTrend";
+import { GeoHealthScore, generateMockHealthData } from "@/components/charts/GeoHealthScore";
 
 export default function AIMonitorPage() {
   const { toast } = useToast();
@@ -71,6 +74,11 @@ export default function AIMonitorPage() {
   const pendingTasks = getTasksByStatus("pending");
   const runningTasks = getTasksByStatus("running");
   const completedTasks = getTasksByStatus("completed");
+
+  // Generate mock data for demo (replace with real data when available)
+  const trendData = generateMockTrendData(7);
+  const mentionData = generateMockMentionData(7);
+  const healthData = generateMockHealthData();
 
   // Stats
   const stats = {
@@ -235,17 +243,71 @@ export default function AIMonitorPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="tasks" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="overview" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            数据概览
+          </TabsTrigger>
           <TabsTrigger value="tasks" className="gap-2">
             <Clock className="h-4 w-4" />
             监测任务
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="gap-2">
+            <LineChart className="h-4 w-4" />
+            趋势分析
           </TabsTrigger>
           <TabsTrigger value="models" className="gap-2">
             <Zap className="h-4 w-4" />
             模型状态
           </TabsTrigger>
         </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-3">
+            {/* Health Score */}
+            <GeoHealthScore
+              score={healthData.score}
+              breakdown={healthData.breakdown}
+              trend={healthData.trend}
+            />
+
+            {/* Quick Stats */}
+            <Card className="bg-white border-slate-200 lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg">监测快报</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500 mb-1">本周监测</p>
+                    <p className="text-2xl font-bold">{Math.min(tasks.length, 15)}</p>
+                    <p className="text-xs text-green-600 mt-1">↑ 较上周增长 12%</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500 mb-1">平均排名</p>
+                    <p className="text-2xl font-bold">#3.2</p>
+                    <p className="text-xs text-green-600 mt-1">↑ 提升 0.5 位</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500 mb-1">最佳表现模型</p>
+                    <p className="text-2xl font-bold">🌙 Kimi</p>
+                    <p className="text-xs text-slate-500 mt-1">提及率 78%</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-slate-500 mb-1">待优化问题</p>
+                    <p className="text-2xl font-bold text-amber-600">3</p>
+                    <p className="text-xs text-slate-500 mt-1">排名低于预期</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mini Trend Chart */}
+          <MentionTrend data={mentionData} title="近7天提及率走势" />
+        </TabsContent>
 
         {/* Tasks Tab */}
         <TabsContent value="tasks" className="space-y-4">
@@ -325,6 +387,52 @@ export default function AIMonitorPage() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Trends Tab */}
+        <TabsContent value="trends" className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RankingTrend
+              data={trendData}
+              models={["qwen", "kimi", "wenxin"]}
+              title="各模型排名趋势"
+            />
+            <MentionTrend
+              data={mentionData}
+              title="品牌提及率趋势"
+            />
+          </div>
+
+          <Card className="bg-white border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg">趋势洞察</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-green-800">Kimi 表现最佳</p>
+                    <p className="text-sm text-green-700">在 Kimi 中的平均排名从第 5 位提升至第 2 位，建议加强该渠道优化。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-800">文心一言待优化</p>
+                    <p className="text-sm text-amber-700">品牌在文心一言中的提及率较低（约 45%），建议增加相关内容投放。</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-800">整体趋势向好</p>
+                    <p className="text-sm text-blue-700">近 7 天平均提及率从 52% 提升至 68%，GEO 优化策略初见成效。</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -130,6 +130,25 @@ npx shadcn@latest add [component-name]
 
 ## 📝 变更记录
 
+### 2026-01-26 - 第三阶段：系统设置与数据导出
+
+**新增功能**：
+- **系统设置页**：`/settings` 页面，配置 Dify API、默认模型、界面设置等
+- **数据导出**：支持导出产品/竞品/监测任务等数据为 CSV 格式
+- **数据统计**：设置页展示各模块数据量统计
+- **危险操作区**：支持一键清除所有本地数据
+
+**新增文件**：
+- `src/types/settings.ts` - 系统设置类型定义
+- `src/store/useSettingsStore.ts` - 设置状态管理
+- `src/app/settings/page.tsx` - 系统设置页面
+- `src/lib/export-utils.ts` - CSV 导出工具函数
+
+**更新文件**：
+- `src/components/layout/Sidebar.tsx` - 添加设置入口
+
+---
+
 ### 2026-01-26 - 第二阶段功能完善
 
 **新增功能**：

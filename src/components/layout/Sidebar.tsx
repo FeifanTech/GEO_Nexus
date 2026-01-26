@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Radar,
   FileText,
+  Settings,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -140,6 +141,21 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 bg-white">
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 mb-2",
+            pathname === "/settings"
+              ? "bg-slate-100 text-slate-900"
+              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          )}
+        >
+          <Settings className={cn(
+            "h-5 w-5 flex-shrink-0",
+            pathname === "/settings" ? "text-slate-900" : "text-slate-400"
+          )} />
+          系统设置
+        </Link>
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100">
             <span className="text-sm font-medium text-slate-600">用</span>

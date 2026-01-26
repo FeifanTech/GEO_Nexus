@@ -251,50 +251,54 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            工作台
-          </h1>
-          <p className="mt-1 text-slate-500">
-            欢迎回来！以下是您的 GEO 智能分析概览。
-          </p>
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      <div className="relative z-10 space-y-8 p-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between slide-up fade-in">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
+              GEO Nexus 工作台
+            </h1>
+            <p className="text-lg text-slate-600 max-w-2xl">
+              欢迎回来！这里是您的智能分析中心，实时掌握产品表现和优化机会。
+            </p>
+          </div>
+          <Button asChild className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+            <Link href="/geo-diagnosis">
+              <Stethoscope className="h-4 w-4" />
+              开始智能诊断
+            </Link>
+          </Button>
         </div>
-        <Button asChild className="gap-2">
-          <Link href="/geo-diagnosis">
-            <Stethoscope className="h-4 w-4" />
-            开始诊断
-          </Link>
-        </Button>
-      </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map((stat) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 slide-up">
+        {statsCards.map((stat, index) => (
           <Card
             key={stat.title}
-            className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer scale-in"
+            style={{ animationDelay: `${index * 150}ms` }}
           >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-slate-700">
                 {stat.title}
               </CardTitle>
-              <stat.icon className="h-5 w-5 text-slate-400" />
+              <div className="p-1.5 sm:p-2 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                <stat.icon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div
-                className={`text-3xl font-bold ${stat.color || "text-slate-900"}`}
+                className={`text-2xl sm:text-3xl font-bold ${stat.color || "text-slate-900"}`}
               >
                 {stat.value}
               </div>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-xs text-slate-500">{stat.change}</span>
+              <div className="mt-1 sm:mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <span className="text-xs text-slate-600">{stat.change}</span>
                 {stat.href && (
                   <Link
                     href={stat.href}
-                    className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
                   >
                     查看 <ArrowRight className="h-3 w-3" />
                   </Link>
@@ -306,35 +310,34 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 lg:gap-8 xl:grid-cols-5">
         {/* GEO Radar Chart */}
-        <Card className="lg:col-span-2 bg-white border-slate-200 shadow-sm">
+        <Card className="xl:col-span-2 bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow scale-in" style={{ animationDelay: '600ms' }}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg text-slate-900">
-                  GEO 表现
+                <CardTitle className="text-xl font-bold text-slate-900 mb-1">
+                  GEO 表现分析
                 </CardTitle>
-                <CardDescription>
-                  五维度分析概览
+                <CardDescription className="text-slate-600">
+                  五维度智能分析概览
                 </CardDescription>
               </div>
               <Badge
-                variant="outline"
-                className="text-lg font-bold px-3 py-1"
+                className="text-lg font-bold px-4 py-2 bg-blue-600 text-white border-0"
               >
                 {calculateGeoScore(mockGeoMetrics)}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             {/* Product Selector */}
-            <div className="mb-4 flex items-center gap-3">
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50">
               <Select
                 value={selectedProductId}
                 onValueChange={setSelectedProductId}
               >
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[220px] bg-white border-slate-300">
                   <SelectValue placeholder="选择产品" />
                 </SelectTrigger>
                 <SelectContent>
@@ -350,9 +353,9 @@ export default function DashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowComparison(!showComparison)}
-                className={showComparison ? "bg-slate-100" : ""}
+                className="bg-white border-slate-300 hover:bg-slate-50"
               >
-                {showComparison ? "隐藏" : "显示"}基准
+                {showComparison ? "隐藏" : "显示"}基准对比
               </Button>
             </div>
 
@@ -383,126 +386,110 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="lg:col-span-3 bg-white border-slate-200 shadow-sm">
+        <Card className="xl:col-span-3 bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow scale-in" style={{ animationDelay: '750ms' }}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg text-slate-900">
-                  近期动态
+                <CardTitle className="text-xl font-bold text-slate-900 mb-1">
+                  智能动态
                 </CardTitle>
-                <CardDescription>
-                  您在平台上的最新操作记录
+                <CardDescription className="text-slate-600">
+                  平台实时动态和重要操作记录
                 </CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="text-slate-500">
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 font-medium">
                 查看全部
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="relative overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="pb-3 text-left font-medium text-slate-500">
-                      操作
-                    </th>
-                    <th className="pb-3 text-left font-medium text-slate-500">
-                      项目
-                    </th>
-                    <th className="pb-3 text-left font-medium text-slate-500">
-                      状态
-                    </th>
-                    <th className="pb-3 text-right font-medium text-slate-500">
-                      时间
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentActivities.map((activity) => {
-                    const Icon = getActivityIcon(activity.type);
-                    return (
-                      <tr
-                        key={activity.id}
-                        className="hover:bg-slate-50 transition-colors"
-                      >
-                        <td className="py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100">
-                              <Icon className="h-4 w-4 text-slate-600" />
-                            </div>
-                            <span className="font-medium text-slate-900">
-                              {activity.action}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 text-slate-600">{activity.item}</td>
-                        <td className="py-3">{getStatusBadge(activity.status)}</td>
-                        <td className="py-3 text-right text-slate-400">
-                          {activity.time}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {recentActivities.map((activity, index) => {
+                const Icon = getActivityIcon(activity.type);
+                return (
+                  <div
+                    key={activity.id}
+                    className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all duration-200 cursor-pointer group"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                        <Icon className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-900 mb-1">
+                          {activity.action}
+                        </div>
+                        <div className="text-sm text-slate-600">{activity.item}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {getStatusBadge(activity.status)}
+                      <div className="text-sm text-slate-500 min-w-[60px] text-right">
+                        {activity.time}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer overflow-hidden">
           <Link href="/product-manager">
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                <Package className="h-6 w-6 text-slate-600" />
+            <CardContent className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6">
+              <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">添加新产品</h3>
-                <p className="text-sm text-slate-500">
-                  创建和管理您的产品目录
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1 sm:mb-2">产品管理</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  智能创建和管理您的产品目录
                 </p>
               </div>
-              <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+              <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 group-hover:translate-x-1 transition-transform hidden sm:block" />
             </CardContent>
           </Link>
         </Card>
 
-        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer overflow-hidden">
           <Link href="/geo-diagnosis">
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                <Stethoscope className="h-6 w-6 text-slate-600" />
+            <CardContent className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6">
+              <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-orange-50 group-hover:bg-orange-100 transition-colors">
+                <Stethoscope className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">运行诊断</h3>
-                <p className="text-sm text-slate-500">
-                  分析您的产品表现
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1 sm:mb-2">智能诊断</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  AI 驱动的产品表现深度分析
                 </p>
               </div>
-              <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+              <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 group-hover:translate-x-1 transition-transform hidden sm:block" />
             </CardContent>
           </Link>
         </Card>
 
-        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer overflow-hidden">
           <Link href="/content-factory">
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                <Factory className="h-6 w-6 text-slate-600" />
+            <CardContent className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6">
+              <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-50 group-hover:bg-purple-100 transition-colors">
+                <Factory className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">生成内容</h3>
-                <p className="text-sm text-slate-500">
-                  使用 AI 生成营销内容
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1 sm:mb-2">内容工厂</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  AI 自动生成高质量营销内容
                 </p>
               </div>
-              <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+              <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 group-hover:translate-x-1 transition-transform hidden sm:block" />
             </CardContent>
           </Link>
         </Card>
+      </div>
       </div>
     </div>
   );

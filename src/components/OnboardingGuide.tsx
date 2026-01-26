@@ -26,41 +26,41 @@ const ONBOARDING_STEPS = [
     title: "欢迎使用 GEO Nexus",
     description: "GEO Nexus 是您的 AI 搜索优化智能平台，帮助您提升品牌在 AI 搜索引擎中的表现。",
     icon: Globe,
-    color: "from-slate-700 to-slate-900",
+    color: "bg-slate-700",
   },
   {
     title: "第一步：添加产品",
     description: "在「产品管理」中添加您的产品信息，包括名称、卖点和目标用户。",
     icon: Package,
-    color: "from-blue-500 to-indigo-500",
+    color: "bg-blue-600",
     action: "/product-manager",
   },
   {
     title: "第二步：添加竞品",
     description: "在「竞品管理」中添加竞争对手信息，了解市场竞争态势。",
     icon: Target,
-    color: "from-purple-500 to-pink-500",
+    color: "bg-purple-600",
     action: "/competitors",
   },
   {
     title: "第三步：GEO 诊断",
     description: "使用「GEO 诊断」功能，AI 将分析您的产品在搜索引擎中的表现。",
     icon: Stethoscope,
-    color: "from-emerald-500 to-teal-500",
+    color: "bg-emerald-600",
     action: "/geo-diagnosis",
   },
   {
     title: "第四步：监测排名",
     description: "在「AI 监测」中创建监测任务，持续追踪品牌在各大 AI 搜索引擎的排名。",
     icon: Radar,
-    color: "from-orange-500 to-amber-500",
+    color: "bg-orange-600",
     action: "/ai-monitor",
   },
   {
     title: "第五步：生成内容",
     description: "使用「内容工厂」批量生成 PDP 摘要、评论脚本和种草文案。",
     icon: Factory,
-    color: "from-rose-500 to-pink-500",
+    color: "bg-rose-600",
     action: "/content-factory",
   },
 ];
@@ -134,8 +134,8 @@ export function OnboardingGuide() {
           {/* Icon */}
           <div className="flex justify-center mb-6">
             <div className={`
-              flex items-center justify-center w-20 h-20 rounded-full 
-              bg-gradient-to-br ${step.color}
+              flex items-center justify-center w-20 h-20 rounded-full
+              ${step.color}
             `}>
               <Icon className="h-10 w-10 text-white" />
             </div>
@@ -179,7 +179,7 @@ export function OnboardingGuide() {
           </Button>
           <Button
             onClick={handleNext}
-            className={`gap-2 bg-gradient-to-r ${step.color}`}
+            className={`gap-2 ${step.color}`}
           >
             {isLastStep ? (
               <>

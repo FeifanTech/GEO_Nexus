@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,8 +16,11 @@ import {
   Radar,
   FileText,
   Settings,
+  Menu,
+  X,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 // 主菜单导航
 const mainNavigation = [
@@ -77,6 +81,23 @@ const toolsNavigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
 
   const renderNavItem = (item: { name: string; href: string; icon: React.ElementType }) => {
     const isActive = pathname === item.href;
@@ -90,6 +111,7 @@ export function Sidebar() {
             ? "bg-slate-100 text-slate-900"
             : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
         )}
+        onClick={() => setIsMobileMenuOpen(false)}
       >
         <item.icon
           className={cn(
@@ -102,20 +124,31 @@ export function Sidebar() {
     );
   };
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-slate-200 overflow-y-auto">
+  const SidebarContent = () => (
+    <>
       {/* Logo Section */}
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-slate-200">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600">
-          <Globe className="w-5 h-5 text-white" />
+      <div className="flex h-16 items-center justify-between gap-2 px-6 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600">
+            <Globe className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight text-slate-900">
+            GEO Nexus
+          </span>
         </div>
-        <span className="text-lg font-semibold tracking-tight text-slate-900">
-          GEO Nexus
-        </span>
+        {/* Mobile close button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <X className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-col gap-1 p-4">
+      <nav className="flex flex-col gap-1 p-4 flex-1 overflow-y-auto">
         {/* 主菜单 */}
         <p className="px-3 mb-2 text-xs font-medium text-slate-400 tracking-wider uppercase">
           数据管理
@@ -140,7 +173,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 bg-white">
+      <div className="p-4 border-t border-slate-200 bg-white">
         <Link
           href="/settings"
           className={cn(
@@ -149,6 +182,7 @@ export function Sidebar() {
               ? "bg-slate-100 text-slate-900"
               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
           )}
+          onClick={() => setIsMobileMenuOpen(false)}
         >
           <Settings className={cn(
             "h-5 w-5 flex-shrink-0",
@@ -166,6 +200,52 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600">
+            <Globe className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight text-slate-900">
+            GEO Nexus
+          </span>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 z-40 bg-black/50"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <aside
+        className={cn(
+          "lg:hidden fixed left-0 top-0 z-50 h-screen w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-slate-200 flex-col">
+        <SidebarContent />
+      </aside>
+    </>
   );
 }

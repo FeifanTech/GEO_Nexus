@@ -85,8 +85,8 @@ export function RankingTrend({ data, models, title = "排名趋势" }: RankingTr
                   borderRadius: "8px",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
-                formatter={(value: number | null, name: string) => {
-                  if (value === null) return ["未出现", name];
+                formatter={(value, name) => {
+                  if (value === null || value === undefined) return ["未出现", name];
                   return [`第 ${value} 位`, name];
                 }}
                 labelFormatter={(label) => `日期: ${label}`}
@@ -170,7 +170,7 @@ export function MentionTrend({ data, title = "提及率趋势" }: MentionTrendPr
                   border: "1px solid #e2e8f0",
                   borderRadius: "8px",
                 }}
-                formatter={(value: number) => [`${value.toFixed(1)}%`, "提及率"]}
+                formatter={(value) => [`${Number(value).toFixed(1)}%`, "提及率"]}
               />
               <Line
                 type="monotone"

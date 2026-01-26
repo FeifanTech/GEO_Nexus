@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Settings,
   Key,
   Globe,
   Building,
@@ -55,8 +54,6 @@ import {
   exportCompetitors,
   exportQueries,
   exportMonitorTasks,
-  exportDiagnosisRecords,
-  exportContentRecords,
   exportAllData,
 } from "@/lib/export-utils";
 

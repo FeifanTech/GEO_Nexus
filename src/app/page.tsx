@@ -40,7 +40,6 @@ import {
   AlertCircle,
   FileText,
   Radar,
-  Search,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -82,7 +81,7 @@ export default function DashboardPage() {
   }, [mounted, monitorTasks]);
   
   // Real task count from workflow
-  const pendingTaskCount = mounted ? workflowTasks.filter(t => t.status === "待处理" || t.status === "进行中").length : 0;
+  const pendingTaskCount = mounted ? workflowTasks.filter(t => t.status === "todo" || t.status === "in_progress").length : 0;
   
   // System health based on recent activity
   const systemHealth = useMemo(() => {
@@ -115,11 +114,11 @@ export default function DashboardPage() {
     workflowTasks.slice(0, 3).forEach((task) => {
       activities.push({
         id: `task-${task.id}`,
-        action: task.status === "已完成" ? "完成任务" : "创建任务",
+        action: task.status === "done" ? "完成任务" : "创建任务",
         item: task.title,
         time: formatTimeAgo(task.createdAt),
         type: "task",
-        status: task.status === "已完成" ? "success" : task.status === "待审核" ? "warning" : "pending",
+        status: task.status === "done" ? "success" : task.status === "review" ? "warning" : "pending",
       });
     });
     

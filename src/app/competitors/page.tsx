@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -77,7 +77,7 @@ export default function CompetitorsPage() {
   );
 
   // Get unique categories
-  const categories = [...new Set(competitors.map((c) => c.category).filter(Boolean))];
+  const categories = Array.from(new Set(competitors.map((c) => c.category).filter(Boolean)));
 
   // Reset form
   const resetForm = () => {

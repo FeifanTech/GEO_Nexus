@@ -326,11 +326,11 @@ export default function GeoDiagnosisPage() {
                       诊断内容
                     </p>
                     <p className="text-sm text-slate-700">
-                      {mode.id === "rank_check" &&
+                      {mode.id === "rank" &&
                         "分析产品在搜索引擎和电商平台的排名表现，提供优化建议"}
-                      {mode.id === "competitor_analysis" &&
+                      {mode.id === "competitor" &&
                         "深入对比分析竞争对手，识别差异化优势和市场机会"}
-                      {mode.id === "sentiment_audit" &&
+                      {mode.id === "sentiment" &&
                         "挖掘用户负面反馈和潜在问题，制定改进策略"}
                     </p>
                   </div>

@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useQueryStore } from "@/store/useQueryStore";
-import { useProductStore } from "@/store/useProductStore";
-import { useCompetitorStore } from "@/store/useCompetitorStore";
 import {
   SearchQuery,
   SearchQueryFormData,
@@ -17,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -34,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
@@ -44,7 +41,6 @@ import {
   Search,
   HelpCircle,
   Tag,
-  Filter,
   Play,
   Pause,
   Archive,
@@ -67,8 +63,6 @@ const emptyFormData: SearchQueryFormData = {
 export default function QueryLibraryPage() {
   const { toast } = useToast();
   const { queries, addQuery, updateQuery, deleteQuery, bulkUpdateStatus } = useQueryStore();
-  const { products } = useProductStore();
-  const { competitors } = useCompetitorStore();
 
   const [mounted, setMounted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

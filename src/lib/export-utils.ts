@@ -4,7 +4,7 @@
  */
 
 // Generic CSV generation
-export function generateCSV<T extends Record<string, unknown>>(
+export function generateCSV<T extends object>(
   data: T[],
   columns: { key: keyof T; label: string }[]
 ): string {
@@ -55,7 +55,7 @@ function formatDateForFilename(date: Date): string {
 import { Product } from "@/types/product";
 import { Competitor } from "@/types/competitor";
 import { MonitorTask, AI_MODEL_CONFIG } from "@/types/monitor";
-import { Query, QUERY_INTENT_CONFIG } from "@/types/query";
+import { SearchQuery, QUERY_INTENT_CONFIG } from "@/types/query";
 import { DiagnosisRecord, DIAGNOSIS_TYPE_CONFIG } from "@/types/diagnosis";
 import { ContentRecord, CONTENT_TYPE_CONFIG } from "@/types/content";
 
@@ -89,7 +89,7 @@ export function exportCompetitors(competitors: Competitor[]): void {
 }
 
 // Export Queries
-export function exportQueries(queries: Query[]): void {
+export function exportQueries(queries: SearchQuery[]): void {
   const formattedQueries = queries.map((q) => ({
     ...q,
     intentLabel: QUERY_INTENT_CONFIG[q.intent]?.label || q.intent,
@@ -185,7 +185,7 @@ export function exportContentRecords(records: ContentRecord[]): void {
 export function exportAllData(data: {
   products: Product[];
   competitors: Competitor[];
-  queries: Query[];
+  queries: SearchQuery[];
   monitorTasks: MonitorTask[];
   diagnosisRecords: DiagnosisRecord[];
   contentRecords: ContentRecord[];

@@ -30,8 +30,7 @@ interface UseMonitorExecutionReturn {
 // 解析 AI 回复中的品牌提及情况
 function parseAIResponse(
   response: string,
-  targetBrand: string,
-  model: AIModel
+  targetBrand: string
 ): Partial<RankingResult> {
   const lowerResponse = response.toLowerCase();
   const lowerBrand = targetBrand.toLowerCase();
@@ -142,6 +141,9 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
       currentModel: null,
       progress: 0,
       error: null,
+      batchMode: false,
+      batchTotal: 0,
+      batchCompleted: 0,
     });
     
     // 更新任务状态为执行中
@@ -191,7 +193,7 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
               },
               onComplete: () => {
                 // 解析结果
-                const parsed = parseAIResponse(fullResponse, task.targetBrand, model);
+                const parsed = parseAIResponse(fullResponse, task.targetBrand);
                 
                 const result: RankingResult = {
                   model,
@@ -350,7 +352,7 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
                   fullResponse += chunk;
                 },
                 onComplete: () => {
-                  const parsed = parseAIResponse(fullResponse, task.targetBrand, model);
+                  const parsed = parseAIResponse(fullResponse, task.targetBrand);
                   const result: RankingResult = {
                     model,
                     position: parsed.position ?? null,
@@ -387,7 +389,7 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
         }
         
         completeTask(task.id);
-      } catch (taskError) {
+      } catch {
         updateTaskStatus(task.id, "failed");
       }
       

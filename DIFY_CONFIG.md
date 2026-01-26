@@ -1,6 +1,7 @@
 # GEO Nexus - Dify 应用配置文档
 
-> 最后更新: 2026-01-25
+> 版本: 1.1  
+> 最后更新: 2026-01-26
 
 ---
 
@@ -360,32 +361,82 @@ geo-nexus-platform/
 │   │   ├── ai-monitor/               # AI 排名监测
 │   │   ├── query-library/            # 问题库
 │   │   ├── content-factory/          # 内容工厂
-│   │   └── workflow/                 # 作业流
+│   │   ├── workflow/                 # 作业流
+│   │   ├── report/                   # 监测报告
+│   │   └── settings/                 # 系统设置
+│   ├── components/
+│   │   ├── layout/
+│   │   │   └── Sidebar.tsx           # 响应式侧边栏
+│   │   ├── charts/                   # 图表组件
+│   │   ├── ui/                       # shadcn/ui 组件
+│   │   ├── OnboardingGuide.tsx       # 新手引导
+│   │   └── KeyboardShortcutsDialog.tsx
+│   ├── hooks/
+│   │   ├── use-toast.ts
+│   │   ├── useMonitorExecution.ts    # 监测执行
+│   │   └── useKeyboardShortcuts.ts
 │   ├── lib/
-│   │   └── dify-client.ts            # Dify API 客户端
+│   │   ├── utils.ts
+│   │   ├── dify-client.ts            # Dify API 客户端
+│   │   └── export-utils.ts           # 数据导出
 │   ├── store/                        # Zustand 状态管理
 │   │   ├── useProductStore.ts
 │   │   ├── useCompetitorStore.ts
 │   │   ├── useTaskStore.ts
 │   │   ├── useQueryStore.ts
-│   │   └── useMonitorStore.ts
+│   │   ├── useMonitorStore.ts
+│   │   ├── useDiagnosisStore.ts
+│   │   ├── useContentStore.ts
+│   │   └── useSettingsStore.ts
 │   └── types/                        # 类型定义
 │       ├── product.ts
 │       ├── competitor.ts
 │       ├── task.ts
 │       ├── query.ts
-│       └── monitor.ts
+│       ├── monitor.ts
+│       ├── diagnosis.ts
+│       ├── content.ts
+│       └── settings.ts
 ├── .env.local                        # 环境变量 (git ignored)
-└── DIFY_CONFIG.md                    # 本文档
+├── ARCHITECTURE.md                   # 系统架构文档
+├── DEV_NOTES.md                      # 开发笔记
+├── DIFY_CONFIG.md                    # 本文档
+├── PRD_PHASE2.md                     # 第二阶段需求
+└── README.md                         # 项目说明
 ```
 
 ---
 
 ## 📝 开发日志
 
+### 2026-01-26
+
+**第四阶段 - 用户体验优化：**
+
+1. ✅ 移动端响应式布局
+2. ✅ 骨架屏加载组件
+3. ✅ 空状态组件
+4. ✅ 全局键盘快捷键
+5. ✅ 新手引导向导
+
+**第三阶段 - 系统设置与数据导出：**
+
+1. ✅ 系统设置页 (`/settings`)
+2. ✅ 数据导出 (CSV 格式)
+3. ✅ 数据统计展示
+4. ✅ 一键数据清除
+
+**第二阶段 - 监测与报告：**
+
+1. ✅ 监测任务执行 (真实调用 Dify API)
+2. ✅ 批量监测执行
+3. ✅ 监测报告页 (`/report`)
+4. ✅ 诊断历史记录
+5. ✅ 内容生成历史
+
 ### 2026-01-25
 
-**完成的功能模块：**
+**第一阶段 - 核心功能：**
 
 1. ✅ 项目初始化 (Next.js 14 + TypeScript + Tailwind + shadcn/ui)
 2. ✅ 产品管理 - CRUD + LocalStorage 持久化
@@ -394,18 +445,22 @@ geo-nexus-platform/
 5. ✅ 内容工厂 - PDP摘要/批量评论/多平台种草文案
 6. ✅ 作业流管理 - Kanban看板 + 检查清单
 7. ✅ 问题库 - AI搜索监测问题管理
-8. ✅ AI排名监测 - 多模型监测任务管理（UI完成，待Dify工作流配置）
+8. ✅ AI排名监测 - 多模型监测任务管理
 
-**API 重构：**
-- 将多个 Dify API 路由合并为统一入口 `/api/dify`
+**API 架构：**
+- 统一入口 `/api/dify`
 - 通过 `task_type` 参数区分不同任务
 - 支持单一 Dify 应用处理所有 AI 任务
+- 支持流式响应 (SSE)
 
-**下一步计划：**
-- [ ] 配置 Dify Workflow 条件分支
-- [ ] 实现 AI 搜索监测的实际调用
-- [ ] 添加监测结果趋势图表
-- [ ] 实现定时监测功能
+**下一阶段计划 (Phase 2)：**
+- [ ] 用户认证系统 (NextAuth.js)
+- [ ] PostgreSQL 数据库存储
+- [ ] 定时监测任务
+- [ ] 数据分析增强
+- [ ] API 开放平台
+
+详见 [PRD_PHASE2.md](./PRD_PHASE2.md)
 
 ---
 
@@ -439,4 +494,5 @@ fetch('/api/dify', {
 
 ---
 
-*本文档由 GEO Nexus 开发团队维护*
+*本文档由 GEO Nexus 开发团队维护*  
+*最后更新: 2026-01-26*

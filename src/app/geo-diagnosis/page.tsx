@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { useProductStore } from "@/store/useProductStore";
+import { useDiagnosisStore } from "@/store/useDiagnosisStore";
 import { sendDiagnosis, createStreamHandler } from "@/lib/dify-client";
+import { DiagnosisType, DIAGNOSIS_TYPE_CONFIG } from "@/types/diagnosis";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,6 +36,10 @@ import {
   RotateCcw,
   AlertCircle,
   Sparkles,
+  History,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 // Diagnosis mode configuration
@@ -68,6 +74,7 @@ type DiagnosisMode = (typeof DIAGNOSIS_MODES)[number]["id"];
 
 export default function GeoDiagnosisPage() {
   const { products } = useProductStore();
+  const { addRecord, getRecentRecords, deleteRecord } = useDiagnosisStore();
   const { toast } = useToast();
   const outputRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +85,10 @@ export default function GeoDiagnosisPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | undefined>();
+  const [showHistory, setShowHistory] = useState(false);
+  
+  // Get history records
+  const recentDiagnoses = mounted ? getRecentRecords(10) : [];
 
   // Handle hydration
   useEffect(() => {
@@ -148,9 +159,20 @@ export default function GeoDiagnosisPage() {
           (fullContent, newConversationId) => {
             setIsRunning(false);
             setConversationId(newConversationId);
+            
+            // Save to history
+            addRecord({
+              productId: selectedProduct.id,
+              productName: selectedProduct.name,
+              type: activeMode as DiagnosisType,
+              query: prompt,
+              result: fullContent,
+              conversationId: newConversationId,
+            });
+            
             toast({
               title: "诊断完成",
-              description: `${currentMode.name}分析已完成`,
+              description: `${currentMode.name}分析已完成，结果已保存到历史记录`,
             });
           },
           (err) => {
@@ -435,6 +457,103 @@ export default function GeoDiagnosisPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Diagnosis History Section */}
+      <Card className="mt-6 bg-white border-slate-200 shadow-sm">
+        <CardHeader 
+          className="cursor-pointer"
+          onClick={() => setShowHistory(!showHistory)}
+        >
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <History className="h-5 w-5 text-slate-600" />
+              诊断历史
+              {recentDiagnoses.length > 0 && (
+                <Badge variant="secondary">{recentDiagnoses.length}</Badge>
+              )}
+            </CardTitle>
+            <Button variant="ghost" size="sm">
+              {showHistory ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <CardDescription>
+            查看过往的诊断记录
+          </CardDescription>
+        </CardHeader>
+        
+        {showHistory && (
+          <CardContent>
+            {recentDiagnoses.length > 0 ? (
+              <div className="space-y-3">
+                {recentDiagnoses.map((record) => {
+                  const typeConfig = DIAGNOSIS_TYPE_CONFIG[record.type];
+                  return (
+                    <div 
+                      key={record.id} 
+                      className="p-4 border rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{typeConfig.icon}</span>
+                          <div>
+                            <span className="font-medium">{record.productName}</span>
+                            <Badge 
+                              variant="outline" 
+                              className={`ml-2 ${typeConfig.color}`}
+                            >
+                              {typeConfig.label}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-400">
+                            {new Date(record.createdAt).toLocaleString("zh-CN")}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteRecord(record.id);
+                              toast({
+                                title: "已删除",
+                                description: "诊断记录已删除",
+                              });
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <details className="mt-2">
+                        <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700">
+                          查看诊断结果
+                        </summary>
+                        <div className="mt-2 p-3 bg-slate-50 rounded-lg max-h-[300px] overflow-y-auto">
+                          <article className="prose prose-slate prose-sm max-w-none">
+                            <ReactMarkdown>{record.result}</ReactMarkdown>
+                          </article>
+                        </div>
+                      </details>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>暂无诊断历史</p>
+                <p className="text-sm">完成诊断后，结果将自动保存在这里</p>
+              </div>
+            )}
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 }

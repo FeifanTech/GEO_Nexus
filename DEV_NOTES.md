@@ -130,6 +130,30 @@ npx shadcn@latest add [component-name]
 
 ## 📝 变更记录
 
+### 2026-01-26 - 第二阶段功能完善
+
+**新增功能**：
+- **批量监测执行**：一键执行所有待处理的监测任务
+- **监测结果详情**：增强的任务详情弹窗，显示完整 AI 回复
+- **报告图表**：添加模型提及率对比柱状图
+- **诊断历史记录**：GEO 诊断结果自动保存，可折叠查看历史
+- **内容生成历史**：内容工厂结果自动保存，支持复制和删除
+
+**新增文件**：
+- `src/types/diagnosis.ts` - 诊断记录类型
+- `src/store/useDiagnosisStore.ts` - 诊断历史 Store
+- `src/types/content.ts` - 内容记录类型
+- `src/store/useContentStore.ts` - 内容历史 Store
+
+**更新文件**：
+- `src/hooks/useMonitorExecution.ts` - 支持批量执行
+- `src/app/ai-monitor/page.tsx` - 批量执行按钮、增强详情视图
+- `src/app/report/page.tsx` - 添加 Recharts 柱状图
+- `src/app/geo-diagnosis/page.tsx` - 诊断结果保存和历史展示
+- `src/app/content-factory/page.tsx` - 内容保存和历史展示
+
+---
+
 ### 2026-01-26 - 监测执行与报告
 
 **新增功能**：

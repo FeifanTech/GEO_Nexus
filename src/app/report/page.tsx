@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/select";
 import {
   Printer,
-  Download,
   ArrowLeft,
   TrendingUp,
   TrendingDown,
@@ -27,10 +26,20 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 export default function ReportPage() {
   const { products } = useProductStore();
-  const { tasks, getTasksByStatus } = useMonitorStore();
+  const { getTasksByStatus } = useMonitorStore();
   const { queries } = useQueryStore();
 
   const [mounted, setMounted] = useState(false);
@@ -236,6 +245,72 @@ export default function ReportPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Model Comparison Chart */}
+        {resultsByModel.length > 0 && (
+          <Card className="mb-6 print:shadow-none print:border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">📈 模型提及率对比</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px] print:h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={resultsByModel.map(r => ({
+                      name: r.config.name,
+                      rate: r.mentionRate,
+                      icon: r.config.icon,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                    />
+                    <YAxis 
+                      domain={[0, 100]}
+                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      axisLine={{ stroke: '#cbd5e1' }}
+                      tickFormatter={(v) => `${v}%`}
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value}%`, '提及率']}
+                      contentStyle={{ 
+                        borderRadius: '8px', 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                    <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
+                      {resultsByModel.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`}
+                          fill={
+                            entry.mentionRate >= 50 ? '#22c55e' : 
+                            entry.mentionRate >= 30 ? '#f59e0b' : '#ef4444'
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-4 mt-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-green-500"></span> 优秀 (≥50%)
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-amber-500"></span> 一般 (30-50%)
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-red-500"></span> 较差 (&lt;30%)
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Tasks Detail */}
         <Card className="mb-6 print:shadow-none print:border">

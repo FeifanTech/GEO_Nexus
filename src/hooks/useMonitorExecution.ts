@@ -14,11 +14,16 @@ interface ExecutionState {
   currentModel: AIModel | null;
   progress: number;  // 0-100
   error: string | null;
+  // Batch execution state
+  batchMode: boolean;
+  batchTotal: number;
+  batchCompleted: number;
 }
 
 interface UseMonitorExecutionReturn {
   state: ExecutionState;
   executeTask: (task: MonitorTask) => Promise<void>;
+  executeBatch: (tasks: MonitorTask[]) => Promise<void>;
   cancelExecution: () => void;
 }
 
@@ -115,6 +120,9 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
     currentModel: null,
     progress: 0,
     error: null,
+    batchMode: false,
+    batchTotal: 0,
+    batchCompleted: 0,
   });
   
   const [abortController, setAbortController] = useState<AbortController | null>(null);
@@ -230,27 +238,173 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
       // 所有模型执行完成
       completeTask(task.id);
       
-      setState({
-        isRunning: false,
-        currentTaskId: null,
-        currentModel: null,
-        progress: 100,
-        error: null,
-      });
+      // Only reset if not in batch mode
+      if (!state.batchMode) {
+        setState({
+          isRunning: false,
+          currentTaskId: null,
+          currentModel: null,
+          progress: 100,
+          error: null,
+          batchMode: false,
+          batchTotal: 0,
+          batchCompleted: 0,
+        });
+      }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "未知错误";
       
-      setState({
-        isRunning: false,
-        currentTaskId: null,
-        currentModel: null,
-        progress: 0,
-        error: errorMessage,
-      });
+      // Only reset if not in batch mode
+      if (!state.batchMode) {
+        setState({
+          isRunning: false,
+          currentTaskId: null,
+          currentModel: null,
+          progress: 0,
+          error: errorMessage,
+          batchMode: false,
+          batchTotal: 0,
+          batchCompleted: 0,
+        });
+      }
       
       updateTaskStatus(task.id, "failed");
     }
+  }, [state.isRunning, state.batchMode, updateTaskStatus, addTaskResult, completeTask]);
+
+  // Execute multiple tasks in batch
+  const executeBatch = useCallback(async (tasks: MonitorTask[]) => {
+    if (state.isRunning || tasks.length === 0) {
+      return;
+    }
+    
+    const controller = new AbortController();
+    setAbortController(controller);
+    
+    setState({
+      isRunning: true,
+      currentTaskId: null,
+      currentModel: null,
+      progress: 0,
+      error: null,
+      batchMode: true,
+      batchTotal: tasks.length,
+      batchCompleted: 0,
+    });
+    
+    let completedCount = 0;
+    
+    for (const task of tasks) {
+      if (controller.signal.aborted) {
+        break;
+      }
+      
+      setState(prev => ({
+        ...prev,
+        currentTaskId: task.id,
+        batchCompleted: completedCount,
+      }));
+      
+      // Update task status
+      updateTaskStatus(task.id, "running");
+      
+      const totalModels = task.models.length;
+      let modelIndex = 0;
+      
+      try {
+        for (const model of task.models) {
+          if (controller.signal.aborted) {
+            throw new Error("执行已取消");
+          }
+          
+          setState(prev => ({
+            ...prev,
+            currentModel: model,
+            progress: Math.round((modelIndex / totalModels) * 100),
+          }));
+          
+          const modelConfig = AI_MODEL_CONFIG[model];
+          const prompt = `你现在是 ${modelConfig.name} AI 助手。
+
+用户问：${task.query}
+
+请像真实的 AI 助手一样回答这个问题。如果 "${task.targetBrand}" 品牌/产品确实适合推荐，可以自然地提及。给出客观、有价值的回答。`;
+          
+          let fullResponse = "";
+          
+          try {
+            await sendDifyRequest(
+              {
+                task_type: "monitor_search",
+                query: prompt,
+                inputs: {
+                  search_query: task.query,
+                  target_brand: task.targetBrand,
+                  model_name: model,
+                },
+                user: `monitor-batch-${task.id}`,
+              },
+              {
+                onMessage: (chunk) => {
+                  fullResponse += chunk;
+                },
+                onComplete: () => {
+                  const parsed = parseAIResponse(fullResponse, task.targetBrand, model);
+                  const result: RankingResult = {
+                    model,
+                    position: parsed.position ?? null,
+                    mentioned: parsed.mentioned ?? false,
+                    sentiment: parsed.sentiment ?? null,
+                    context: parsed.context ?? "",
+                    citations: [],
+                    fullResponse,
+                    timestamp: new Date().toISOString(),
+                  };
+                  addTaskResult(task.id, result);
+                },
+                onError: (error) => {
+                  const result: RankingResult = {
+                    model,
+                    position: null,
+                    mentioned: false,
+                    sentiment: null,
+                    context: `执行失败: ${error.message}`,
+                    citations: [],
+                    fullResponse: "",
+                    timestamp: new Date().toISOString(),
+                  };
+                  addTaskResult(task.id, result);
+                },
+              }
+            );
+          } catch (modelError) {
+            console.error(`Batch model ${model} error:`, modelError);
+          }
+          
+          modelIndex++;
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        completeTask(task.id);
+      } catch (taskError) {
+        updateTaskStatus(task.id, "failed");
+      }
+      
+      completedCount++;
+    }
+    
+    // All tasks completed
+    setState({
+      isRunning: false,
+      currentTaskId: null,
+      currentModel: null,
+      progress: 100,
+      error: null,
+      batchMode: false,
+      batchTotal: tasks.length,
+      batchCompleted: completedCount,
+    });
   }, [state.isRunning, updateTaskStatus, addTaskResult, completeTask]);
 
   const cancelExecution = useCallback(() => {
@@ -269,12 +423,16 @@ export function useMonitorExecution(): UseMonitorExecutionReturn {
       currentModel: null,
       progress: 0,
       error: "用户取消执行",
+      batchMode: false,
+      batchTotal: 0,
+      batchCompleted: 0,
     });
   }, [abortController, state.currentTaskId, updateTaskStatus]);
 
   return {
     state,
     executeTask,
+    executeBatch,
     cancelExecution,
   };
 }

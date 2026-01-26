@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useProductStore } from "@/store/useProductStore";
+import { useContentStore } from "@/store/useContentStore";
 import { generateContent, createStreamHandler } from "@/lib/dify-client";
+import { ContentType, CONTENT_TYPE_CONFIG } from "@/types/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +34,9 @@ import {
   Plus,
   Trash2,
   RefreshCw,
+  History,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 // Platform styles for social posts
@@ -105,6 +110,7 @@ interface GeneratedReview {
 
 export default function ContentFactoryPage() {
   const { products } = useProductStore();
+  const { addRecord, getRecentRecords, deleteRecord } = useContentStore();
   const { toast } = useToast();
 
   const [mounted, setMounted] = useState(false);
@@ -114,6 +120,7 @@ export default function ContentFactoryPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Review batch settings
   const [reviewCount, setReviewCount] = useState(5);
@@ -123,6 +130,9 @@ export default function ContentFactoryPage() {
 
   // Social post settings
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformStyle>("xiaohongshu");
+  
+  // Content history
+  const recentContent = mounted ? getRecentRecords(10) : [];
 
   // Handle hydration
   useEffect(() => {
@@ -179,11 +189,21 @@ export default function ContentFactoryPage() {
         },
         createStreamHandler(
           setGeneratedContent,
-          () => {
+          (fullContent) => {
             setIsGenerating(false);
+            
+            // Save to history
+            addRecord({
+              productId: selectedProduct.id,
+              productName: selectedProduct.name,
+              type: contentType as ContentType,
+              platform: contentType === "social" ? selectedPlatform : undefined,
+              content: fullContent,
+            });
+            
             toast({
               title: "生成成功",
-              description: "内容已生成完毕，可以复制使用",
+              description: "内容已生成完毕并保存到历史记录",
             });
           },
           (err) => {
@@ -296,9 +316,22 @@ export default function ContentFactoryPage() {
 
     setIsGenerating(false);
     setCurrentReviewIndex(0);
+    
+    // Save batch reviews to history
+    if (selectedProduct && generatedReviews.length > 0) {
+      const allContent = generatedReviews.map((r, i) => `【评论 ${i + 1}】${r.scenario}\n${r.content}`).join("\n\n");
+      addRecord({
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        type: "review",
+        batchCount: reviewCount,
+        content: allContent,
+      });
+    }
+    
     toast({
       title: "批量生成完成",
-      description: `已生成 ${reviewCount} 条评论`,
+      description: `已生成 ${reviewCount} 条评论并保存到历史记录`,
     });
   };
 
@@ -794,6 +827,128 @@ export default function ContentFactoryPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Content History Section */}
+      <Card className="mt-6 bg-white border-slate-200 shadow-sm">
+        <CardHeader 
+          className="cursor-pointer"
+          onClick={() => setShowHistory(!showHistory)}
+        >
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <History className="h-5 w-5 text-slate-600" />
+              生成历史
+              {recentContent.length > 0 && (
+                <Badge variant="secondary">{recentContent.length}</Badge>
+              )}
+            </CardTitle>
+            <Button variant="ghost" size="sm">
+              {showHistory ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <CardDescription>
+            查看过往生成的内容
+          </CardDescription>
+        </CardHeader>
+        
+        {showHistory && (
+          <CardContent>
+            {recentContent.length > 0 ? (
+              <div className="space-y-3">
+                {recentContent.map((record) => {
+                  const typeConfig = CONTENT_TYPE_CONFIG[record.type];
+                  return (
+                    <div 
+                      key={record.id} 
+                      className="p-4 border rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{typeConfig.icon}</span>
+                          <div>
+                            <span className="font-medium">{record.productName}</span>
+                            <Badge 
+                              variant="outline" 
+                              className={`ml-2 ${typeConfig.color}`}
+                            >
+                              {typeConfig.label}
+                            </Badge>
+                            {record.platform && (
+                              <Badge variant="outline" className="ml-1">
+                                {PLATFORM_STYLES.find(p => p.id === record.platform)?.name || record.platform}
+                              </Badge>
+                            )}
+                            {record.batchCount && (
+                              <Badge variant="outline" className="ml-1">
+                                {record.batchCount} 条
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-400">
+                            {new Date(record.createdAt).toLocaleString("zh-CN")}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await navigator.clipboard.writeText(record.content);
+                              toast({
+                                title: "已复制",
+                                description: "内容已复制到剪贴板",
+                              });
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteRecord(record.id);
+                              toast({
+                                title: "已删除",
+                                description: "生成记录已删除",
+                              });
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <details className="mt-2">
+                        <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700">
+                          查看内容 ({record.content.length} 字符)
+                        </summary>
+                        <div className="mt-2 p-3 bg-slate-50 rounded-lg max-h-[200px] overflow-y-auto">
+                          <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">
+                            {record.content}
+                          </pre>
+                        </div>
+                      </details>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>暂无生成历史</p>
+                <p className="text-sm">生成内容后，记录将自动保存在这里</p>
+              </div>
+            )}
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 }

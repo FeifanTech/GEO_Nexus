@@ -49,7 +49,7 @@ export default function AIMonitorPage() {
   const { toast } = useToast();
   const { queries, getActiveQueries } = useQueryStore();
   const { tasks, createTask, getRecentTasks, getTasksByStatus } = useMonitorStore();
-  const { state: executionState, executeTask, cancelExecution } = useMonitorExecution();
+  const { state: executionState, executeTask, executeBatch, cancelExecution } = useMonitorExecution();
 
   const [mounted, setMounted] = useState(false);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
@@ -74,6 +74,37 @@ export default function AIMonitorPage() {
     } catch (error) {
       toast({
         title: "监测失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle batch execution
+  const handleBatchExecute = async () => {
+    const pendingTasks = getTasksByStatus("pending");
+    if (pendingTasks.length === 0) {
+      toast({
+        title: "没有待处理任务",
+        description: "所有任务已执行完毕",
+      });
+      return;
+    }
+    
+    toast({
+      title: "开始批量执行",
+      description: `正在执行 ${pendingTasks.length} 个监测任务...`,
+    });
+    
+    try {
+      await executeBatch(pendingTasks);
+      toast({
+        title: "批量执行完成",
+        description: `已完成 ${pendingTasks.length} 个监测任务`,
+      });
+    } catch (error) {
+      toast({
+        title: "批量执行失败",
         description: error instanceof Error ? error.message : "未知错误",
         variant: "destructive",
       });
@@ -230,6 +261,27 @@ export default function AIMonitorPage() {
               查看报告
             </a>
           </Button>
+          {/* Batch Execute Button */}
+          {stats.pendingTasks > 0 && !executionState.isRunning && (
+            <Button
+              variant="outline"
+              onClick={handleBatchExecute}
+              className="gap-2"
+            >
+              <Play className="h-4 w-4" />
+              执行全部 ({stats.pendingTasks})
+            </Button>
+          )}
+          {executionState.batchMode && executionState.isRunning && (
+            <Button
+              variant="destructive"
+              onClick={cancelExecution}
+              className="gap-2"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" />
+              取消 ({executionState.batchCompleted}/{executionState.batchTotal})
+            </Button>
+          )}
           <Button onClick={() => setIsNewTaskDialogOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             新建监测
@@ -705,29 +757,73 @@ export default function AIMonitorPage() {
 
       {/* Task Detail Dialog */}
       <Dialog open={!!viewingTask} onOpenChange={() => setViewingTask(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>监测详情</DialogTitle>
           </DialogHeader>
           {viewingTask && (
             <div className="space-y-4 py-4">
-              <div>
-                <Label className="text-slate-500">问题</Label>
-                <p className="font-medium">{viewingTask.query}</p>
+              {/* Task Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-slate-500 text-xs">监测问题</Label>
+                  <p className="font-medium">{viewingTask.query}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">目标品牌</Label>
+                  <p className="font-medium">{viewingTask.targetBrand}</p>
+                </div>
               </div>
-              <div>
-                <Label className="text-slate-500">目标品牌</Label>
-                <p className="font-medium">{viewingTask.targetBrand}</p>
-              </div>
+              
+              {/* Summary Stats */}
+              {viewingTask.results.length > 0 && (
+                <div className="grid grid-cols-4 gap-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900">
+                      {viewingTask.results.filter(r => r.mentioned).length}/{viewingTask.results.length}
+                    </div>
+                    <div className="text-xs text-slate-500">提及率</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900">
+                      {viewingTask.results.filter(r => r.position !== null).length > 0
+                        ? `#${Math.round(
+                            viewingTask.results
+                              .filter(r => r.position !== null)
+                              .reduce((sum, r) => sum + (r.position || 0), 0) /
+                            viewingTask.results.filter(r => r.position !== null).length
+                          )}`
+                        : "--"
+                      }
+                    </div>
+                    <div className="text-xs text-slate-500">平均排名</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {viewingTask.results.filter(r => r.sentiment === "positive").length}
+                    </div>
+                    <div className="text-xs text-slate-500">正面评价</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">
+                      {viewingTask.results.filter(r => r.sentiment === "negative").length}
+                    </div>
+                    <div className="text-xs text-slate-500">负面评价</div>
+                  </div>
+                </div>
+              )}
+              
               <Separator />
+              
+              {/* Results by Model */}
               <div>
-                <Label className="text-slate-500 mb-2 block">各模型结果</Label>
+                <Label className="text-slate-500 mb-2 block">各模型详细结果</Label>
                 {viewingTask.results.length > 0 ? (
                   <div className="space-y-3">
                     {viewingTask.results.map((result, i) => {
                       const modelConfig = AI_MODEL_CONFIG[result.model];
                       return (
-                        <Card key={i} className="bg-slate-50">
+                        <Card key={i} className="bg-slate-50 overflow-hidden">
                           <CardContent className="p-3">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
@@ -743,12 +839,51 @@ export default function AIMonitorPage() {
                                 {result.position !== null && (
                                   <Badge variant="secondary">排名 #{result.position}</Badge>
                                 )}
+                                {result.sentiment && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={
+                                      result.sentiment === "positive" 
+                                        ? "border-green-300 text-green-700" 
+                                        : result.sentiment === "negative"
+                                        ? "border-red-300 text-red-700"
+                                        : "border-slate-300"
+                                    }
+                                  >
+                                    {result.sentiment === "positive" ? "😊 正面" : 
+                                     result.sentiment === "negative" ? "😟 负面" : "😐 中性"}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
+                            
+                            {/* Context Snippet */}
                             {result.context && (
-                              <p className="text-sm text-slate-600 mt-2 p-2 bg-white rounded border">
-                                {result.context}
-                              </p>
+                              <div className="mt-2 p-2 bg-white rounded border text-sm">
+                                <Label className="text-xs text-slate-400 block mb-1">相关片段</Label>
+                                <p className="text-slate-600">{result.context}</p>
+                              </div>
+                            )}
+                            
+                            {/* Full Response (Collapsible) */}
+                            {result.fullResponse && (
+                              <details className="mt-2">
+                                <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-700">
+                                  查看完整 AI 回复
+                                </summary>
+                                <div className="mt-2 p-3 bg-white rounded border text-sm max-h-[200px] overflow-y-auto">
+                                  <pre className="whitespace-pre-wrap text-slate-600 font-sans">
+                                    {result.fullResponse}
+                                  </pre>
+                                </div>
+                              </details>
+                            )}
+                            
+                            {/* Timestamp */}
+                            {result.timestamp && (
+                              <div className="mt-2 text-xs text-slate-400">
+                                执行时间：{new Date(result.timestamp).toLocaleString("zh-CN")}
+                              </div>
                             )}
                           </CardContent>
                         </Card>

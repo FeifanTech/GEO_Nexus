@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useProductStore } from "@/store/useProductStore";
+import { useCompetitorStore } from "@/store/useCompetitorStore";
 import { Product, ProductFormData } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,18 +30,23 @@ import {
   Swords,
   X,
   Save,
+  Link2,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 
 const emptyFormData: ProductFormData = {
   name: "",
   selling_points: [],
   target_users: "",
   competitors: "",
+  competitorIds: [],
 };
 
 export default function ProductManagerPage() {
   const { products, currentProduct, addProduct, updateProduct, deleteProduct, setCurrentProduct } =
     useProductStore();
+  const { competitors } = useCompetitorStore();
   const { toast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -63,9 +69,26 @@ export default function ProductManagerPage() {
         selling_points: [...currentProduct.selling_points],
         target_users: currentProduct.target_users,
         competitors: currentProduct.competitors,
+        competitorIds: currentProduct.competitorIds || [],
       });
     }
   }, [currentProduct, isEditing]);
+
+  // Toggle competitor selection
+  const toggleCompetitor = (competitorId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      competitorIds: prev.competitorIds?.includes(competitorId)
+        ? prev.competitorIds.filter((id) => id !== competitorId)
+        : [...(prev.competitorIds || []), competitorId],
+    }));
+  };
+
+  // Get linked competitors for display
+  const getLinkedCompetitors = (product: Product) => {
+    if (!product.competitorIds || product.competitorIds.length === 0) return [];
+    return competitors.filter((c) => product.competitorIds?.includes(c.id));
+  };
 
   const handleNewProduct = () => {
     setCurrentProduct(null);
@@ -389,6 +412,56 @@ export default function ProductManagerPage() {
                     />
                   </div>
 
+                  {/* Linked Competitors */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-slate-400" />
+                      关联竞品
+                      {competitors.length === 0 && (
+                        <Link href="/competitors" className="text-xs text-blue-500 hover:underline ml-auto">
+                          前往添加竞品 →
+                        </Link>
+                      )}
+                    </Label>
+                    {competitors.length > 0 ? (
+                      <div className="border rounded-lg p-3 space-y-2 max-h-[150px] overflow-y-auto">
+                        {competitors.map((competitor) => {
+                          const isSelected = formData.competitorIds?.includes(competitor.id);
+                          return (
+                            <div
+                              key={competitor.id}
+                              onClick={() => toggleCompetitor(competitor.id)}
+                              className={`p-2 rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                                isSelected
+                                  ? "bg-blue-50 border border-blue-200"
+                                  : "bg-slate-50 hover:bg-slate-100 border border-transparent"
+                              }`}
+                            >
+                              <div>
+                                <span className="font-medium text-sm">{competitor.name}</span>
+                                <span className="text-xs text-slate-500 ml-2">{competitor.category}</span>
+                              </div>
+                              {isSelected && (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                  已关联
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg p-4 text-center text-sm text-slate-500">
+                        暂无竞品数据，请先在竞品管理中添加
+                      </div>
+                    )}
+                    {(formData.competitorIds?.length || 0) > 0 && (
+                      <p className="text-xs text-slate-500">
+                        已关联 {formData.competitorIds?.length} 个竞品
+                      </p>
+                    )}
+                  </div>
+
                   <Separator />
 
                   {/* Form Actions */}
@@ -489,6 +562,25 @@ export default function ProductManagerPage() {
                   <p className="text-sm text-slate-600 whitespace-pre-wrap">
                     {currentProduct.competitors || "暂未设置竞品分析"}
                   </p>
+                  
+                  {/* Linked Competitors Display */}
+                  {getLinkedCompetitors(currentProduct).length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-sm text-slate-500 mb-2">关联竞品：</p>
+                      <div className="flex flex-wrap gap-2">
+                        {getLinkedCompetitors(currentProduct).map((competitor) => (
+                          <Link
+                            key={competitor.id}
+                            href="/competitors"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-sm transition-colors"
+                          >
+                            {competitor.name}
+                            <ExternalLink className="h-3 w-3 text-slate-400" />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

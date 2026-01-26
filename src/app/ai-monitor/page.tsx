@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useQueryStore } from "@/store/useQueryStore";
 import { useMonitorStore } from "@/store/useMonitorStore";
-import { useProductStore } from "@/store/useProductStore";
 import {
   AIModel,
   AI_MODEL_CONFIG,
@@ -24,13 +23,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -51,12 +43,13 @@ import {
 } from "lucide-react";
 import { RankingTrend, MentionTrend, generateMockTrendData, generateMockMentionData } from "@/components/charts/RankingTrend";
 import { GeoHealthScore, generateMockHealthData } from "@/components/charts/GeoHealthScore";
+import { useMonitorExecution } from "@/hooks/useMonitorExecution";
 
 export default function AIMonitorPage() {
   const { toast } = useToast();
   const { queries, getActiveQueries } = useQueryStore();
   const { tasks, createTask, getRecentTasks, getTasksByStatus } = useMonitorStore();
-  const { products } = useProductStore();
+  const { state: executionState, executeTask, cancelExecution } = useMonitorExecution();
 
   const [mounted, setMounted] = useState(false);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
@@ -64,15 +57,33 @@ export default function AIMonitorPage() {
   const [targetBrand, setTargetBrand] = useState("");
   const [selectedModels, setSelectedModels] = useState<AIModel[]>(DEFAULT_MONITOR_MODELS);
   const [viewingTask, setViewingTask] = useState<MonitorTask | null>(null);
+  const [autoExecute, setAutoExecute] = useState(true);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Handle task execution
+  const handleExecuteTask = async (task: MonitorTask) => {
+    try {
+      await executeTask(task);
+      toast({
+        title: "监测完成",
+        description: `任务 "${task.query}" 执行完毕`,
+      });
+    } catch (error) {
+      toast({
+        title: "监测失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive",
+      });
+    }
+  };
+
   const activeQueries = getActiveQueries();
   const recentTasks = getRecentTasks(20);
-  const pendingTasks = getTasksByStatus("pending");
-  const runningTasks = getTasksByStatus("running");
+  const pendingTasksCount = getTasksByStatus("pending").length;
+  const runningTasksCount = getTasksByStatus("running").length;
   const completedTasks = getTasksByStatus("completed");
 
   // Generate mock data for demo (replace with real data when available)
@@ -83,6 +94,8 @@ export default function AIMonitorPage() {
   // Stats
   const stats = {
     totalTasks: tasks.length,
+    pendingTasks: pendingTasksCount,
+    runningTasks: runningTasksCount,
     completedToday: tasks.filter((t) => {
       if (!t.completedAt) return false;
       const today = new Date().toDateString();
@@ -117,7 +130,7 @@ export default function AIMonitorPage() {
     );
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (selectedQueryIds.length === 0) {
       toast({ title: "请选择要监测的问题", variant: "destructive" });
       return;
@@ -132,7 +145,7 @@ export default function AIMonitorPage() {
     }
 
     const query = queries.find((q) => q.id === selectedQueryIds[0]);
-    createTask(
+    const taskId = createTask(
       {
         queryIds: selectedQueryIds,
         targetBrand: targetBrand.trim(),
@@ -141,8 +154,30 @@ export default function AIMonitorPage() {
       query?.question || ""
     );
 
-    toast({ title: "监测任务已创建", description: "任务将在 Dify 工作流配置完成后自动执行" });
     setIsNewTaskDialogOpen(false);
+    
+    // Auto execute if enabled
+    if (autoExecute) {
+      toast({ title: "监测任务已创建", description: "正在自动执行..." });
+      // Get the created task and execute
+      const createdTask = tasks.find(t => t.id === taskId) || {
+        id: taskId,
+        queryId: selectedQueryIds[0],
+        query: query?.question || "",
+        targetBrand: targetBrand.trim(),
+        models: selectedModels,
+        results: [],
+        status: "pending" as const,
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+      };
+      // Small delay to allow state update
+      setTimeout(() => {
+        handleExecuteTask(createdTask);
+      }, 100);
+    } else {
+      toast({ title: "监测任务已创建", description: "可在任务列表中手动执行" });
+    }
     setSelectedQueryIds([]);
     setTargetBrand("");
     setSelectedModels(DEFAULT_MONITOR_MODELS);
@@ -188,10 +223,18 @@ export default function AIMonitorPage() {
             监测品牌在各大 AI 搜索引擎中的排名表现
           </p>
         </div>
-        <Button onClick={() => setIsNewTaskDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          新建监测
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild className="gap-2">
+            <a href="/report">
+              <BarChart3 className="h-4 w-4" />
+              查看报告
+            </a>
+          </Button>
+          <Button onClick={() => setIsNewTaskDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            新建监测
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -359,18 +402,60 @@ export default function AIMonitorPage() {
                                 ))}
                               </div>
                             )}
+                            {/* Execution Progress */}
+                            {executionState.isRunning && executionState.currentTaskId === task.id && (
+                              <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                                <div className="flex items-center gap-2 text-sm text-blue-700">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <span>
+                                    正在查询 {executionState.currentModel && AI_MODEL_CONFIG[executionState.currentModel].name}...
+                                  </span>
+                                  <span className="ml-auto">{executionState.progress}%</span>
+                                </div>
+                                <div className="mt-1 h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-blue-500 transition-all duration-300"
+                                    style={{ width: `${executionState.progress}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-end gap-2">
                             <span className="text-xs text-slate-400">
                               {new Date(task.createdAt).toLocaleString("zh-CN")}
                             </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setViewingTask(task)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              {/* Run Button for Pending Tasks */}
+                              {task.status === "pending" && !executionState.isRunning && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="gap-1"
+                                  onClick={() => handleExecuteTask(task)}
+                                >
+                                  <Play className="h-3 w-3" />
+                                  执行
+                                </Button>
+                              )}
+                              {/* Cancel Button for Running Tasks */}
+                              {executionState.isRunning && executionState.currentTaskId === task.id && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={cancelExecution}
+                                >
+                                  取消
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setViewingTask(task)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -587,6 +672,22 @@ export default function AIMonitorPage() {
                 })}
               </div>
               <p className="text-xs text-slate-500">已选择 {selectedModels.length} 个模型</p>
+            </div>
+
+            <Separator />
+
+            {/* Auto Execute Option */}
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="autoExecute"
+                checked={autoExecute}
+                onChange={(e) => setAutoExecute(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              <Label htmlFor="autoExecute" className="text-sm cursor-pointer">
+                创建后自动执行监测
+              </Label>
             </div>
           </div>
 

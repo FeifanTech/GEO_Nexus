@@ -46,15 +46,15 @@ DIFY_API_KEY=app-xxxxxxxxxxxxxxxx
 | 问题库 | `/query-library` | 监测问题管理 | 2026-01-25 |
 | AI 监测 | `/ai-monitor` | AI 搜索排名监测 | 2026-01-25 |
 
+| 监测报告 | `/report` | GEO 监测报告（支持打印/PDF） | 2026-01-26 |
+
 ### 待开发模块
 
 | 模块 | 优先级 | 说明 |
 |------|--------|------|
 | 定时监测 | P1 | 定时执行 AI 搜索监测 |
-| 监测报告 | P1 | 自动生成周期报告 |
-| 趋势图表 | P2 | 排名变化趋势可视化 |
 | 用户系统 | P2 | 多用户/团队支持 |
-| 数据导出 | P3 | Excel/PDF 导出 |
+| 数据库存储 | P2 | 替换 LocalStorage 为服务端存储 |
 
 ---
 
@@ -129,6 +129,28 @@ npx shadcn@latest add [component-name]
 ---
 
 ## 📝 变更记录
+
+### 2026-01-26 - 监测执行与报告
+
+**新增功能**：
+- **监测任务执行**：实现真正调用 Dify API 执行监测任务
+- **实时执行进度**：任务执行时显示当前模型和进度条
+- **监测报告页**：新增 `/report` 页面，支持打印/导出 PDF
+- **产品-竞品关联**：产品管理中可选择关联已创建的竞品
+- **工作台数据整合**：Dashboard 显示真实统计数据
+
+**新增文件**：
+- `src/hooks/useMonitorExecution.ts` - 监测执行逻辑
+- `src/app/report/page.tsx` - 监测报告页面
+
+**更新文件**：
+- `src/app/ai-monitor/page.tsx` - 添加执行按钮和进度显示
+- `src/app/product-manager/page.tsx` - 添加竞品关联选择
+- `src/app/page.tsx` - 整合真实数据到工作台
+- `src/components/layout/Sidebar.tsx` - 添加报告入口
+- `src/types/product.ts` - 添加 competitorIds 字段
+
+---
 
 ### 2026-01-25 - AI 监测增强
 
@@ -210,4 +232,4 @@ console.log(await response.json());
 
 ---
 
-*最后更新: 2026-01-25*
+*最后更新: 2026-01-26*

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useProductStore } from "@/store/useProductStore";
+import { useTaskStore } from "@/store/useTaskStore";
+import { useMonitorStore } from "@/store/useMonitorStore";
+import { useQueryStore } from "@/store/useQueryStore";
 import {
   GeoRadar,
   mockGeoMetrics,
@@ -36,55 +39,25 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  Radar,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 
-// Mock recent activities
-const recentActivities = [
-  {
-    id: 1,
-    action: "创建产品",
-    item: "企业分析套件",
-    time: "2 小时前",
-    type: "product",
-    status: "success",
-  },
-  {
-    id: 2,
-    action: "GEO 诊断完成",
-    item: "市场定位分析",
-    time: "5 小时前",
-    type: "diagnosis",
-    status: "success",
-  },
-  {
-    id: 3,
-    action: "内容生成",
-    item: "产品详情页摘要 - 云平台",
-    time: "1 天前",
-    type: "content",
-    status: "success",
-  },
-  {
-    id: 4,
-    action: "竞品分析",
-    item: "Q4 战略复盘",
-    time: "2 天前",
-    type: "diagnosis",
-    status: "warning",
-  },
-  {
-    id: 5,
-    action: "更新产品",
-    item: "移动端 SDK Pro",
-    time: "3 天前",
-    type: "product",
-    status: "success",
-  },
-];
+interface ActivityItem {
+  id: string;
+  action: string;
+  item: string;
+  time: string;
+  type: "product" | "diagnosis" | "content" | "monitor" | "task";
+  status: "success" | "warning" | "pending";
+}
 
 export default function DashboardPage() {
   const { products } = useProductStore();
+  const { tasks: workflowTasks } = useTaskStore();
+  const { tasks: monitorTasks, getRecentTasks: getRecentMonitorTasks } = useMonitorStore();
+  const { queries } = useQueryStore();
   const [mounted, setMounted] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("all");
   const [showComparison, setShowComparison] = useState(false);
@@ -93,46 +66,128 @@ export default function DashboardPage() {
     setMounted(true);
   }, []);
 
-  // Calculate stats
+  // Calculate real stats
   const totalProducts = mounted ? products.length : 0;
-  const optimizationProgress = 73; // Mock: Average optimization progress
-  const recentTasks = 12; // Mock: Recent tasks count
-  const systemHealth = "正常"; // Mock: System health status
+  
+  // Calculate optimization progress from monitor results
+  const optimizationProgress = useMemo(() => {
+    if (!mounted || monitorTasks.length === 0) return 0;
+    const completedTasks = monitorTasks.filter(t => t.status === "completed");
+    if (completedTasks.length === 0) return 0;
+    const mentionRate = completedTasks.reduce((sum, task) => {
+      const mentioned = task.results.filter(r => r.mentioned).length;
+      return sum + (task.results.length > 0 ? (mentioned / task.results.length) * 100 : 0);
+    }, 0) / completedTasks.length;
+    return Math.round(mentionRate);
+  }, [mounted, monitorTasks]);
+  
+  // Real task count from workflow
+  const pendingTaskCount = mounted ? workflowTasks.filter(t => t.status === "待处理" || t.status === "进行中").length : 0;
+  
+  // System health based on recent activity
+  const systemHealth = useMemo(() => {
+    if (!mounted) return "检测中";
+    const recentErrors = monitorTasks.filter(t => t.status === "failed").length;
+    if (recentErrors > 3) return "异常";
+    if (recentErrors > 0) return "警告";
+    return "正常";
+  }, [mounted, monitorTasks]);
+  
+  // Generate real recent activities from stores
+  const recentActivities = useMemo<ActivityItem[]>(() => {
+    if (!mounted) return [];
+    
+    const activities: ActivityItem[] = [];
+    
+    // Add recent monitor tasks
+    getRecentMonitorTasks(3).forEach((task) => {
+      activities.push({
+        id: `monitor-${task.id}`,
+        action: "AI 监测",
+        item: task.query.slice(0, 30) + (task.query.length > 30 ? "..." : ""),
+        time: formatTimeAgo(task.createdAt),
+        type: "monitor",
+        status: task.status === "completed" ? "success" : task.status === "failed" ? "warning" : "pending",
+      });
+    });
+    
+    // Add recent workflow tasks
+    workflowTasks.slice(0, 3).forEach((task) => {
+      activities.push({
+        id: `task-${task.id}`,
+        action: task.status === "已完成" ? "完成任务" : "创建任务",
+        item: task.title,
+        time: formatTimeAgo(task.createdAt),
+        type: "task",
+        status: task.status === "已完成" ? "success" : task.status === "待审核" ? "warning" : "pending",
+      });
+    });
+    
+    // Add products as activities
+    products.slice(0, 2).forEach((product) => {
+      activities.push({
+        id: `product-${product.id}`,
+        action: "产品管理",
+        item: product.name,
+        time: "最近",
+        type: "product",
+        status: "success",
+      });
+    });
+    
+    return activities.slice(0, 5);
+  }, [mounted, getRecentMonitorTasks, workflowTasks, products]);
+
+  // Helper function to format time ago
+  function formatTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return "刚刚";
+    if (diffMins < 60) return `${diffMins} 分钟前`;
+    if (diffHours < 24) return `${diffHours} 小时前`;
+    if (diffDays < 7) return `${diffDays} 天前`;
+    return date.toLocaleDateString("zh-CN");
+  }
 
 
-  // Stats cards configuration
+  // Stats cards configuration with real data
   const statsCards = [
     {
       title: "产品总数",
       value: totalProducts.toString(),
-      change: "本周 +2",
+      change: `${queries.length} 个监测问题`,
       icon: Package,
-      trend: "up",
+      trend: "up" as const,
       href: "/product-manager",
     },
     {
-      title: "优化进度",
-      value: `${optimizationProgress}%`,
-      change: "较上月 +5%",
+      title: "AI 提及率",
+      value: optimizationProgress > 0 ? `${optimizationProgress}%` : "--",
+      change: `${monitorTasks.filter(t => t.status === "completed").length} 次监测`,
       icon: TrendingUp,
-      trend: "up",
-      href: "/geo-diagnosis",
+      trend: "up" as const,
+      href: "/ai-monitor",
     },
     {
-      title: "近期任务",
-      value: recentTasks.toString(),
-      change: "3 个待处理",
+      title: "待处理任务",
+      value: pendingTaskCount.toString(),
+      change: `共 ${workflowTasks.length} 个任务`,
       icon: ListTodo,
-      trend: "neutral",
-      href: "/content-factory",
+      trend: "neutral" as const,
+      href: "/workflow",
     },
     {
       title: "系统状态",
       value: systemHealth,
-      change: "所有服务运行正常",
+      change: systemHealth === "正常" ? "所有服务运行正常" : "部分服务需要关注",
       icon: Activity,
-      trend: "up",
-      color: "text-emerald-600",
+      trend: "up" as const,
+      color: systemHealth === "正常" ? "text-emerald-600" : systemHealth === "警告" ? "text-amber-600" : "text-red-600",
     },
   ];
 
@@ -144,6 +199,10 @@ export default function DashboardPage() {
         return Stethoscope;
       case "content":
         return Factory;
+      case "monitor":
+        return Radar;
+      case "task":
+        return ListTodo;
       default:
         return FileText;
     }
@@ -169,6 +228,13 @@ export default function DashboardPage() {
           >
             <AlertCircle className="h-3 w-3 mr-1" />
             待审核
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
+            <Clock className="h-3 w-3 mr-1" />
+            进行中
           </Badge>
         );
       default:

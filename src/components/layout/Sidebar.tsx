@@ -13,6 +13,7 @@ import {
   Target,
   HelpCircle,
   Radar,
+  FileText,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -65,6 +66,11 @@ const toolsNavigation = [
     name: "作业流",
     href: "/workflow",
     icon: Kanban,
+  },
+  {
+    name: "监测报告",
+    href: "/report",
+    icon: FileText,
   },
 ];
 

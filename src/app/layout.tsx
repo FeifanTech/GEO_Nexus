@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { KeyboardProvider } from "@/components/providers/KeyboardProvider";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { AntdProvider } from "@/components/providers/AntdProvider";
+import { PageTransition } from "@/components/transitions/PageTransition";
+import { RouteProgressBar } from "@/components/transitions/RouteProgressBar";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -35,6 +37,7 @@ export default function RootLayout({
       >
         <AntdProvider>
           <KeyboardProvider>
+            <RouteProgressBar />
             <div className="flex min-h-screen bg-slate-50">
               {/* Sidebar */}
               <Sidebar />
@@ -44,7 +47,9 @@ export default function RootLayout({
                 {/* Mobile header spacer */}
                 <div className="h-14 lg:h-0" />
                 <div className="p-4 md:p-6 lg:p-8">
-                  {children}
+                  <PageTransition>
+                    {children}
+                  </PageTransition>
                 </div>
               </main>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -83,6 +83,15 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Close mobile menu handlers with useCallback
+  const closeMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(false);
+  }, []);
+
+  const openMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(true);
+  }, []);
+
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -99,19 +108,21 @@ export function Sidebar() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const renderNavItem = (item: { name: string; href: string; icon: React.ElementType }) => {
+  const renderNavItem = useCallback((item: { name: string; href: string; icon: React.ElementType }) => {
     const isActive = pathname === item.href;
     return (
       <Link
         key={item.name}
         href={item.href}
+        prefetch={true}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
+          "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150",
+          "hover:translate-x-1 active:scale-95",
           isActive
             ? "bg-blue-50 text-blue-700"
             : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
         )}
-        onClick={() => setIsMobileMenuOpen(false)}
+        onClick={closeMobileMenu}
       >
         <item.icon
           className={cn(
@@ -122,7 +133,7 @@ export function Sidebar() {
         {item.name}
       </Link>
     );
-  };
+  }, [pathname, closeMobileMenu]);
 
   const SidebarContent = () => (
     <>
@@ -141,7 +152,8 @@ export function Sidebar() {
           variant="ghost"
           size="icon"
           className="lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={closeMobileMenu}
+          aria-label="关闭导航菜单"
         >
           <X className="h-5 w-5" />
         </Button>
@@ -176,13 +188,15 @@ export function Sidebar() {
       <div className="p-4 border-t border-slate-200 bg-slate-50/50">
         <Link
           href="/settings"
+          prefetch={true}
           className={cn(
-            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 mb-3",
+            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 mb-3",
+            "hover:translate-x-1 active:scale-95",
             pathname === "/settings"
               ? "bg-blue-50 text-blue-700"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           )}
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={closeMobileMenu}
         >
           <Settings className={cn(
             "h-5 w-5 flex-shrink-0",
@@ -218,7 +232,8 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setIsMobileMenuOpen(true)}
+          onClick={openMobileMenu}
+          aria-label="打开导航菜单"
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -226,9 +241,9 @@ export function Sidebar() {
 
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 z-40 bg-black/50"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={closeMobileMenu}
         />
       )}
 

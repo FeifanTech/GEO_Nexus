@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useTransition } from "react";
 import { useProductStore } from "@/store/useProductStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useMonitorStore } from "@/store/useMonitorStore";
@@ -60,9 +60,23 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>("all");
   const [showComparison, setShowComparison] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Optimized state update handlers
+  const handleProductChange = useCallback((value: string) => {
+    startTransition(() => {
+      setSelectedProductId(value);
+    });
+  }, []);
+
+  const toggleComparison = useCallback(() => {
+    startTransition(() => {
+      setShowComparison(prev => !prev);
+    });
   }, []);
 
   // Calculate real stats
@@ -91,7 +105,23 @@ export default function DashboardPage() {
     if (recentErrors > 0) return "警告";
     return "正常";
   }, [mounted, monitorTasks]);
-  
+
+  // Helper function to format time ago (memoized for performance)
+  const formatTimeAgo = useCallback((dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "刚刚";
+    if (diffMins < 60) return `${diffMins} 分钟前`;
+    if (diffHours < 24) return `${diffHours} 小时前`;
+    if (diffDays < 7) return `${diffDays} 天前`;
+    return date.toLocaleDateString("zh-CN");
+  }, []);
+
   // Generate real recent activities from stores
   const recentActivities = useMemo<ActivityItem[]>(() => {
     if (!mounted) return [];
@@ -135,24 +165,7 @@ export default function DashboardPage() {
     });
     
     return activities.slice(0, 5);
-  }, [mounted, getRecentMonitorTasks, workflowTasks, products]);
-
-  // Helper function to format time ago
-  function formatTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 1) return "刚刚";
-    if (diffMins < 60) return `${diffMins} 分钟前`;
-    if (diffHours < 24) return `${diffHours} 小时前`;
-    if (diffDays < 7) return `${diffDays} 天前`;
-    return date.toLocaleDateString("zh-CN");
-  }
-
+  }, [mounted, getRecentMonitorTasks, workflowTasks, products, formatTimeAgo]);
 
   // Stats cards configuration with real data
   const statsCards = [
@@ -190,7 +203,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const getActivityIcon = (type: string) => {
+  const getActivityIcon = useCallback((type: string) => {
     switch (type) {
       case "product":
         return Package;
@@ -205,9 +218,9 @@ export default function DashboardPage() {
       default:
         return FileText;
     }
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case "success":
         return (
@@ -244,7 +257,7 @@ export default function DashboardPage() {
           </Badge>
         );
     }
-  };
+  }, []);
 
   if (!mounted) {
     return null;
@@ -264,7 +277,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <Button asChild className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-            <Link href="/geo-diagnosis">
+            <Link href="/geo-diagnosis" prefetch={true}>
               <Stethoscope className="h-4 w-4" />
               开始智能诊断
             </Link>
@@ -298,6 +311,7 @@ export default function DashboardPage() {
                 {stat.href && (
                   <Link
                     href={stat.href}
+                    prefetch={true}
                     className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
                   >
                     查看 <ArrowRight className="h-3 w-3" />
@@ -335,7 +349,8 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50">
               <Select
                 value={selectedProductId}
-                onValueChange={setSelectedProductId}
+                onValueChange={handleProductChange}
+                disabled={isPending}
               >
                 <SelectTrigger className="w-[220px] bg-white border-slate-300">
                   <SelectValue placeholder="选择产品" />
@@ -352,7 +367,8 @@ export default function DashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowComparison(!showComparison)}
+                onClick={toggleComparison}
+                disabled={isPending}
                 className="bg-white border-slate-300 hover:bg-slate-50"
               >
                 {showComparison ? "隐藏" : "显示"}基准对比
@@ -440,7 +456,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer overflow-hidden">
-          <Link href="/product-manager">
+          <Link href="/product-manager" prefetch={true}>
             <CardContent className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6">
               <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
                 <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
@@ -457,7 +473,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer overflow-hidden">
-          <Link href="/geo-diagnosis">
+          <Link href="/geo-diagnosis" prefetch={true}>
             <CardContent className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6">
               <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-orange-50 group-hover:bg-orange-100 transition-colors">
                 <Stethoscope className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
@@ -474,7 +490,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer overflow-hidden">
-          <Link href="/content-factory">
+          <Link href="/content-factory" prefetch={true}>
             <CardContent className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6">
               <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-50 group-hover:bg-purple-100 transition-colors">
                 <Factory className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />

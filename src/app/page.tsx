@@ -226,7 +226,7 @@ export default function DashboardPage() {
         return (
           <Badge
             variant="secondary"
-            className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50"
+            className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-colors"
           >
             <CheckCircle2 className="h-3 w-3 mr-1" />
             已完成
@@ -236,7 +236,7 @@ export default function DashboardPage() {
         return (
           <Badge
             variant="secondary"
-            className="bg-amber-50 text-amber-700 hover:bg-amber-50"
+            className="bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer transition-colors"
           >
             <AlertCircle className="h-3 w-3 mr-1" />
             待审核
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         );
       case "pending":
         return (
-          <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
+          <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer transition-colors">
             <Clock className="h-3 w-3 mr-1" />
             进行中
           </Badge>

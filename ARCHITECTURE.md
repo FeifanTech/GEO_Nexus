@@ -1,6 +1,6 @@
 # GEO Nexus - 系统技术架构文档
 
-> 版本: 1.3
+> 版本: 1.3.1
 > 最后更新: 2026-01-27
 
 ---
@@ -654,10 +654,20 @@ data: {"event":"message_end","metadata":{...}}
 - [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) - Phase 2 实施计划
 - [AGENTS.md](./AGENTS.md) - AI Agent 配置
 - [ANTD_INTEGRATION.md](./ANTD_INTEGRATION.md) - Ant Design 集成指南
+- [BUTTON_DESIGN_GUIDE.md](./BUTTON_DESIGN_GUIDE.md) - 按钮设计规范
 
 ---
 
 ## 📝 更新日志
+
+### v1.3.1 (2026-01-27)
+- ✅ 按钮样式全面优化
+- ✅ 修复 Badge hover 状态无反馈问题（3 处）
+- ✅ 创建按钮设计规范文档（BUTTON_DESIGN_GUIDE.md）
+- ✅ 统一按钮 hover 状态的颜色对比度标准
+- ✅ 添加按钮优化总结文档（BUTTON_OPTIMIZATION_SUMMARY.md）
+- ✅ 全项目按钮审查（60+ 个按钮）
+- ✅ 确保所有按钮符合 WCAG AA 无障碍标准
 
 ### v1.3 (2026-01-27)
 - ✅ UI/UX 优化第三阶段

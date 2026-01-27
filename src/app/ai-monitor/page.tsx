@@ -10,9 +10,11 @@ import {
   MonitorTask,
 } from "@/types/monitor";
 import { QUERY_INTENT_CONFIG } from "@/types/query";
+import { AIModelIcon } from "@/components/icons/AIModelIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -387,7 +389,10 @@ export default function AIMonitorPage() {
                   </div>
                   <div className="p-4 bg-slate-50 rounded-lg">
                     <p className="text-sm text-slate-500 mb-1">最佳表现模型</p>
-                    <p className="text-2xl font-bold">🌙 Kimi</p>
+                    <div className="flex items-center gap-2">
+                      <AIModelIcon model="kimi" className="h-6 w-6 text-indigo-600" />
+                      <p className="text-2xl font-bold">Kimi</p>
+                    </div>
                     <p className="text-xs text-slate-500 mt-1">提及率 78%</p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-lg">
@@ -447,7 +452,8 @@ export default function AIMonitorPage() {
                                     variant="outline"
                                     className={result.mentioned ? "border-green-300 text-green-700" : "border-slate-300"}
                                   >
-                                    {AI_MODEL_CONFIG[result.model].icon} {AI_MODEL_CONFIG[result.model].name}
+                                    <AIModelIcon model={result.model} className="h-3.5 w-3.5 inline mr-1" />
+                                    {AI_MODEL_CONFIG[result.model].name}
                                     {result.position !== null && ` #${result.position}`}
                                     {result.mentioned ? " ✓" : " ✗"}
                                   </Badge>
@@ -581,7 +587,7 @@ export default function AIMonitorPage() {
               <Card key={model} className="bg-white border-slate-200">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <span className="text-2xl">{config.icon}</span>
+                    <AIModelIcon model={model as AIModel} className="h-5 w-5" />
                     {config.name}
                   </CardTitle>
                   <CardDescription>{config.description}</CardDescription>
@@ -638,116 +644,140 @@ export default function AIMonitorPage() {
 
       {/* New Task Dialog */}
       <Dialog open={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>新建监测任务</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="space-y-2 px-6 pt-6 pb-4 border-b border-slate-200 flex-shrink-0">
+            <DialogTitle className="text-xl font-bold">新建监测任务</DialogTitle>
+            <p className="text-sm text-slate-500">配置 AI 搜索排名监测任务，支持多模型并发查询</p>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 px-6 py-4 overflow-y-auto flex-1">
             {/* Target Brand */}
             <div className="space-y-2">
-              <Label htmlFor="targetBrand">目标品牌 *</Label>
+              <Label htmlFor="targetBrand" className="text-sm font-semibold text-slate-700">
+                目标品牌 <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="targetBrand"
                 value={targetBrand}
                 onChange={(e) => setTargetBrand(e.target.value)}
                 placeholder="输入要监测的品牌名称..."
+                className="h-10"
               />
             </div>
 
             <Separator />
 
             {/* Query Selection */}
-            <div className="space-y-2">
-              <Label>选择监测问题 *</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold text-slate-700">
+                选择监测问题 <span className="text-red-500">*</span>
+              </Label>
               {activeQueries.length > 0 ? (
-                <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-lg p-3">
+                <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-lg p-3 bg-slate-50">
                   {activeQueries.map((query) => {
                     const isSelected = selectedQueryIds.includes(query.id);
                     const intentConfig = QUERY_INTENT_CONFIG[query.intent];
                     return (
-                      <div
+                      <label
                         key={query.id}
-                        className={`p-2 rounded-lg cursor-pointer transition-colors ${
-                          isSelected ? "bg-slate-100 border border-slate-300" : "hover:bg-slate-50"
+                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                          isSelected
+                            ? "bg-white border-2 border-blue-300 shadow-sm"
+                            : "bg-white border-2 border-transparent hover:border-slate-200 hover:shadow-sm"
                         }`}
-                        onClick={() => toggleQuerySelection(query.id)}
                       >
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            className="h-4 w-4"
-                          />
-                          <Badge className={`${intentConfig.color} text-xs`}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => checked !== "indeterminate" && toggleQuerySelection(query.id)}
+                          className="flex-shrink-0"
+                        />
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Badge className={`${intentConfig.color} text-xs flex-shrink-0`}>
                             {intentConfig.label}
                           </Badge>
-                          <span className="text-sm">{query.question}</span>
+                          <span className="text-sm text-slate-900 truncate">{query.question}</span>
                         </div>
-                      </div>
+                      </label>
                     );
                   })}
                 </div>
               ) : (
-                <div className="p-4 text-center text-slate-500 border rounded-lg">
+                <div className="p-4 text-center text-slate-500 border rounded-lg bg-white">
                   暂无活跃问题，请先在问题库中添加
                 </div>
               )}
-              <p className="text-xs text-slate-500">已选择 {selectedQueryIds.length} 个问题</p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">已选择问题</span>
+                <span className="font-semibold text-blue-600">{selectedQueryIds.length} 个</span>
+              </div>
             </div>
 
             <Separator />
 
             {/* Model Selection */}
-            <div className="space-y-2">
-              <Label>选择 AI 模型 *</Label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold text-slate-700">
+                选择 AI 模型 <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
                 {Object.entries(AI_MODEL_CONFIG).map(([model, config]) => {
                   const isSelected = selectedModels.includes(model as AIModel);
                   return (
-                    <div
+                    <button
                       key={model}
-                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      type="button"
+                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all duration-150 text-left ${
                         isSelected
-                          ? "border-slate-900 bg-slate-50"
-                          : "border-slate-200 hover:border-slate-300"
+                          ? "border-blue-500 bg-blue-50 shadow-sm"
+                          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                       }`}
                       onClick={() => toggleModel(model as AIModel)}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xl">{config.icon}</span>
-                        <span className="font-medium text-sm">{config.name}</span>
+                        <AIModelIcon model={model as AIModel} className={`h-5 w-5 ${isSelected ? "text-blue-600" : "text-slate-600"}`} />
+                        <span className={`font-medium text-sm ${isSelected ? "text-blue-900" : "text-slate-900"}`}>
+                          {config.name}
+                        </span>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
-              <p className="text-xs text-slate-500">已选择 {selectedModels.length} 个模型</p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">已选择模型</span>
+                <span className="font-semibold text-blue-600">
+                  {selectedModels.length} / {Object.keys(AI_MODEL_CONFIG).length} 个
+                </span>
+              </div>
             </div>
 
             <Separator />
 
             {/* Auto Execute Option */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <Checkbox
                 id="autoExecute"
                 checked={autoExecute}
-                onChange={(e) => setAutoExecute(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
+                onCheckedChange={(checked) => setAutoExecute(checked === true)}
               />
-              <Label htmlFor="autoExecute" className="text-sm cursor-pointer">
+              <Label htmlFor="autoExecute" className="text-sm cursor-pointer font-medium text-blue-900">
                 创建后自动执行监测
               </Label>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewTaskDialogOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-2 px-6 py-4 border-t border-slate-200 flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsNewTaskDialogOpen(false)}
+              className="flex-1 sm:flex-initial"
+            >
               取消
             </Button>
-            <Button onClick={handleCreateTask} className="gap-2">
+            <Button
+              onClick={handleCreateTask}
+              className="gap-2 flex-1 sm:flex-initial"
+            >
               <Play className="h-4 w-4" />
               创建任务
             </Button>
@@ -757,12 +787,12 @@ export default function AIMonitorPage() {
 
       {/* Task Detail Dialog */}
       <Dialog open={!!viewingTask} onOpenChange={() => setViewingTask(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>监测详情</DialogTitle>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200 flex-shrink-0">
+            <DialogTitle className="text-xl font-bold">监测详情</DialogTitle>
           </DialogHeader>
           {viewingTask && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 px-6 py-4 overflow-y-auto flex-1">
               {/* Task Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -827,7 +857,7 @@ export default function AIMonitorPage() {
                           <CardContent className="p-3">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-xl">{modelConfig.icon}</span>
+                                <AIModelIcon model={result.model} className="h-5 w-5" />
                                 <span className="font-medium">{modelConfig.name}</span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -840,18 +870,18 @@ export default function AIMonitorPage() {
                                   <Badge variant="secondary">排名 #{result.position}</Badge>
                                 )}
                                 {result.sentiment && (
-                                  <Badge 
-                                    variant="outline" 
+                                  <Badge
+                                    variant="outline"
                                     className={
-                                      result.sentiment === "positive" 
-                                        ? "border-green-300 text-green-700" 
+                                      result.sentiment === "positive"
+                                        ? "border-green-300 text-green-700"
                                         : result.sentiment === "negative"
                                         ? "border-red-300 text-red-700"
                                         : "border-slate-300"
                                     }
                                   >
-                                    {result.sentiment === "positive" ? "😊 正面" : 
-                                     result.sentiment === "negative" ? "😟 负面" : "😐 中性"}
+                                    {result.sentiment === "positive" ? "正面" :
+                                     result.sentiment === "negative" ? "负面" : "中性"}
                                   </Badge>
                                 )}
                               </div>
@@ -896,6 +926,7 @@ export default function AIMonitorPage() {
               </div>
             </div>
           )}
+          {!viewingTask && <div className="flex-1" />}
         </DialogContent>
       </Dialog>
     </div>

@@ -369,7 +369,7 @@ export default function DashboardPage() {
                 size="sm"
                 onClick={toggleComparison}
                 disabled={isPending}
-                className="bg-white border-slate-300 hover:bg-slate-50"
+                className="bg-white border-slate-300 hover:bg-slate-100 hover:text-slate-900"
               >
                 {showComparison ? "隐藏" : "显示"}基准对比
               </Button>

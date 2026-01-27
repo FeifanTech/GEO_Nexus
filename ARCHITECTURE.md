@@ -1,7 +1,7 @@
 # GEO Nexus - 系统技术架构文档
 
-> 版本: 1.0  
-> 最后更新: 2026-01-26
+> 版本: 1.1  
+> 最后更新: 2026-01-27
 
 ---
 
@@ -41,7 +41,8 @@ GEO Nexus 是一个 **AI 搜索优化运营平台 (GEO Ops Platform)**，帮助�
 │                                   │                                      │
 │                           Zustand (状态管理)                             │
 │                                   │                                      │
-│                          LocalStorage (持久化)                           │
+│                          LocalStorage (持久化) ✅ 当前使用               │
+│                          Prisma + PostgreSQL ⏳ 已准备，待集成          │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -58,6 +59,7 @@ GEO Nexus 是一个 **AI 搜索优化运营平台 (GEO Ops Platform)**，帮助�
 │  └───────────────────────────────────────────────────────────────────┘  │
 │                                   │                                      │
 │                           环境变量 (API Keys)                            │
+│                          Prisma Client ⏳ 已准备                         │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -95,25 +97,32 @@ GEO Nexus 是一个 **AI 搜索优化运营平台 (GEO Ops Platform)**，帮助�
 | **Tailwind CSS** | 3.x | 原子化 CSS |
 | **shadcn/ui** | latest | UI 组件库 |
 | **Lucide React** | latest | 图标库 |
-| **Zustand** | 4.x | 状态管理 |
-| **Recharts** | 2.x | 数据可视化 |
-| **react-markdown** | 9.x | Markdown 渲染 |
+| **Zustand** | 5.x | 状态管理 |
+| **Recharts** | 3.x | 数据可视化 |
+| **react-markdown** | 10.x | Markdown 渲染 |
 
 ### 后端技术
 
-| 技术 | 用途 |
-|------|------|
-| **Next.js API Routes** | API 网关/代理 |
-| **Server-Sent Events** | 流式响应 |
-| **Dify API** | AI 能力调用 |
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Next.js API Routes** | 14.x | API 网关/代理 |
+| **Server-Sent Events** | - | 流式响应 |
+| **Dify API** | - | AI 能力调用 |
+| **Prisma** | 7.x | ORM (已准备，待集成) |
 
 ### 数据存储
 
-| 存储类型 | 技术 | 用途 |
-|----------|------|------|
-| 客户端持久化 | LocalStorage | 产品、竞品、任务等数据 |
-| 会话状态 | Zustand | 运行时状态管理 |
-| 环境配置 | .env.local | API Keys、配置项 |
+| 存储类型 | 技术 | 用途 | 状态 |
+|----------|------|------|------|
+| 客户端持久化 | LocalStorage | 产品、竞品、任务等数据 | ✅ 当前使用 |
+| 会话状态 | Zustand | 运行时状态管理 | ✅ 当前使用 |
+| 环境配置 | .env.local | API Keys、配置项 | ✅ 当前使用 |
+| 数据库 (未来) | Prisma + PostgreSQL | 服务端数据存储 | ⏳ 已准备，待集成 |
+
+**说明：**
+- 当前所有数据存储在客户端 LocalStorage，通过 Zustand persist 中间件自动同步
+- Prisma 和 PostgreSQL 已配置但尚未集成到业务逻辑中
+- 计划在 Phase 2 完成数据库迁移（详见 PRD_PHASE2.md）
 
 ---
 
@@ -190,14 +199,22 @@ geo-nexus-platform/
 │       ├── content.ts
 │       └── settings.ts
 │
+├── prisma/                           # Prisma 配置 (已准备，待集成)
+│   ├── schema.prisma                 # 数据库模型定义 (基础配置)
+│   └── migrations/                   # 数据库迁移文件
+├── prisma.config.ts                  # Prisma 配置文件
+├── .env                              # 环境变量模板
 ├── .env.local                        # 环境变量 (gitignored)
 ├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
+├── next.config.mjs                    # Next.js 配置
+├── tailwind.config.ts                # Tailwind CSS 配置
+├── tsconfig.json                      # TypeScript 配置
 ├── ARCHITECTURE.md                   # 本文档
 ├── DEV_NOTES.md                      # 开发笔记
 ├── DIFY_CONFIG.md                    # Dify 配置
-└── PRD_PHASE2.md                     # 下阶段需求
+├── PRD_PHASE2.md                     # 下阶段需求
+├── IMPLEMENTATION_PLAN.md            # Phase 2 实施计划
+└── AGENTS.md                         # AI Agent 配置
 ```
 
 ---
@@ -284,6 +301,27 @@ interface DifyRequest {
 ---
 
 ## 🗄️ 数据模型
+
+### 当前数据存储方案
+
+**客户端存储 (LocalStorage)**
+- 所有业务数据存储在浏览器 LocalStorage
+- 通过 Zustand persist 中间件自动同步
+- 优点：简单快速，无需后端
+- 限制：5MB 存储上限，无法跨设备同步
+
+**数据库准备状态 (Prisma + PostgreSQL)**
+- ✅ Prisma 依赖已安装 (`@prisma/client@7.3.0`, `prisma@7.3.0`)
+- ✅ Prisma 配置文件已创建 (`prisma/schema.prisma`, `prisma.config.ts`)
+- ✅ 数据库连接字符串已配置 (`.env` 中的 `DATABASE_URL`)
+- ⏳ Prisma Schema 模型定义待完善
+- ⏳ 数据库迁移待执行
+- ⏳ 业务逻辑集成待完成
+
+**迁移计划：**
+- Phase 2 将完成从 LocalStorage 到 PostgreSQL 的迁移
+- 保持向后兼容，支持数据导入导出
+- 详见 [PRD_PHASE2.md](./PRD_PHASE2.md) 和 [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 ### 核心实体关系
 
@@ -486,6 +524,8 @@ data: {"event":"message_end","metadata":{...}}
 | RankingTrend | `components/charts/RankingTrend.tsx` | 排名趋势折线图 |
 | GeoHealthScore | `components/charts/GeoHealthScore.tsx` | 健康度环形评分图 |
 
+**注意：** MentionTrend 组件在文档中提及但当前代码库中未找到，可能已移除或重命名。
+
 ### 业务组件
 
 | 组件 | 路径 | 说明 |
@@ -502,9 +542,12 @@ data: {"event":"message_end","metadata":{...}}
 | card | 卡片容器 |
 | dialog | 对话框/模态框 |
 | input | 输入框 |
+| label | 标签组件 |
 | select | 下拉选择 |
 | tabs | 标签页 |
+| textarea | 多行文本输入 |
 | toast | 通知提示 |
+| toaster | Toast 容器 |
 | skeleton | 骨架屏加载 |
 | empty-state | 空状态提示 |
 | switch | 开关组件 |
@@ -565,12 +608,14 @@ data: {"event":"message_end","metadata":{...}}
 
 ## 📊 技术债务
 
-| 类别 | 问题 | 影响 | 优先级 |
-|------|------|------|--------|
-| 存储 | LocalStorage 5MB 限制 | 数据量大时失败 | P1 |
-| 测试 | 缺少单元测试/E2E测试 | 回归风险 | P1 |
-| 类型 | 部分 any 类型 | 类型安全 | P2 |
-| 错误处理 | 需统一错误边界 | 用户体验 | P2 |
+| 类别 | 问题 | 影响 | 优先级 | 状态 |
+|------|------|------|--------|------|
+| 存储 | LocalStorage 5MB 限制 | 数据量大时失败 | P1 | ⏳ Prisma 已准备，待集成 |
+| 数据库集成 | Prisma Schema 未完成 | 无法使用数据库 | P1 | ⏳ 基础配置完成，待完善模型 |
+| 测试 | 缺少单元测试/E2E测试 | 回归风险 | P1 | ⬜ 待开始 |
+| 类型 | 部分 any 类型 | 类型安全 | P2 | ⬜ 待优化 |
+| 错误处理 | 需统一错误边界 | 用户体验 | P2 | ⬜ 待实现 |
+| 用户认证 | 无用户系统 | 无法多用户协作 | P1 | ⏳ Phase 2 计划中 |
 
 ---
 
@@ -588,8 +633,27 @@ data: {"event":"message_end","metadata":{...}}
 - [DEV_NOTES.md](./DEV_NOTES.md) - 开发笔记
 - [DIFY_CONFIG.md](./DIFY_CONFIG.md) - Dify 配置
 - [PRD_PHASE2.md](./PRD_PHASE2.md) - 第二阶段需求
+- [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) - Phase 2 实施计划
+- [AGENTS.md](./AGENTS.md) - AI Agent 配置
+
+---
+
+## 📝 更新日志
+
+### v1.1 (2026-01-27)
+- ✅ 更新技术栈版本信息（Zustand 5.x, Recharts 3.x, react-markdown 10.x）
+- ✅ 添加 Prisma 准备状态说明
+- ✅ 更新项目结构，包含 prisma 目录和配置文件
+- ✅ 完善 UI 组件列表
+- ✅ 更新技术债务追踪，标注 Prisma 集成状态
+- ✅ 添加更新日志章节
+
+### v1.0 (2026-01-26)
+- ✅ 初始架构文档创建
+- ✅ 完成核心功能模块文档
+- ✅ 完成数据流和 API 设计文档
 
 ---
 
 *文档维护: GEO Nexus 开发团队*  
-*最后更新: 2026-01-26*
+*最后更新: 2026-01-27*

@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { KeyboardProvider } from "@/components/providers/KeyboardProvider";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { AntdProvider } from "@/components/providers/AntdProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,23 +33,25 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <KeyboardProvider>
-          <div className="flex min-h-screen bg-slate-50">
-            {/* Sidebar */}
-            <Sidebar />
-            
-            {/* Main Content Area */}
-            <main className="flex-1 lg:ml-64">
-              {/* Mobile header spacer */}
-              <div className="h-14 lg:h-0" />
-              <div className="p-4 md:p-6 lg:p-8">
-                {children}
-              </div>
-            </main>
-          </div>
-          <Toaster />
-          <OnboardingGuide />
-        </KeyboardProvider>
+        <AntdProvider>
+          <KeyboardProvider>
+            <div className="flex min-h-screen bg-slate-50">
+              {/* Sidebar */}
+              <Sidebar />
+
+              {/* Main Content Area */}
+              <main className="flex-1 lg:ml-64">
+                {/* Mobile header spacer */}
+                <div className="h-14 lg:h-0" />
+                <div className="p-4 md:p-6 lg:p-8">
+                  {children}
+                </div>
+              </main>
+            </div>
+            <Toaster />
+            <OnboardingGuide />
+          </KeyboardProvider>
+        </AntdProvider>
       </body>
     </html>
   );

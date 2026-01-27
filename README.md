@@ -142,7 +142,7 @@ npm run dev
 | **框架** | Next.js 14 (App Router) |
 | **语言** | TypeScript 5.x |
 | **样式** | Tailwind CSS 3.x |
-| **UI 组件** | shadcn/ui |
+| **UI 组件** | Ant Design 5.x + shadcn/ui |
 | **状态管理** | Zustand + LocalStorage |
 | **图表** | Recharts |
 | **AI 引擎** | Dify |
@@ -229,6 +229,7 @@ npx shadcn@latest add [component-name]
 | 文档 | 说明 |
 |------|------|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 系统技术架构详解 |
+| [ANTD_INTEGRATION.md](./ANTD_INTEGRATION.md) | Ant Design 集成指南 |
 | [DIFY_CONFIG.md](./DIFY_CONFIG.md) | Dify 应用配置指南 |
 | [DEV_NOTES.md](./DEV_NOTES.md) | 开发笔记与变更记录 |
 | [PRD_PHASE2.md](./PRD_PHASE2.md) | 第二阶段需求规划 |

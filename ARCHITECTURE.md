@@ -95,7 +95,8 @@ GEO Nexus 是一个 **AI 搜索优化运营平台 (GEO Ops Platform)**，帮助�
 | **React** | 18.x | UI 组件库 |
 | **TypeScript** | 5.x | 类型安全 |
 | **Tailwind CSS** | 3.x | 原子化 CSS |
-| **shadcn/ui** | latest | UI 组件库 |
+| **Ant Design** | 5.x | 企业级 UI 组件库（表格、表单） |
+| **shadcn/ui** | latest | 现代化基础 UI 组件 |
 | **Lucide React** | latest | 图标库 |
 | **Zustand** | 5.x | 状态管理 |
 | **Recharts** | 3.x | 数据可视化 |
@@ -156,7 +157,10 @@ geo-nexus-platform/
 │   │   │   ├── MentionTrend.tsx      # 提及率趋势图
 │   │   │   └── GeoHealthScore.tsx    # 健康度评分
 │   │   ├── providers/
-│   │   │   └── KeyboardProvider.tsx  # 全局快捷键
+│   │   │   ├── KeyboardProvider.tsx  # 全局快捷键
+│   │   │   └── AntdProvider.tsx      # Ant Design 主题配置
+│   │   ├── examples/
+│   │   │   └── AntdExample.tsx       # Ant Design 使用示例
 │   │   ├── workflow/
 │   │   │   └── KanbanBoard.tsx       # 看板组件
 │   │   ├── ui/                       # shadcn/ui 组件
@@ -177,7 +181,8 @@ geo-nexus-platform/
 │   ├── lib/
 │   │   ├── utils.ts                  # 工具函数
 │   │   ├── dify-client.ts            # Dify API 客户端
-│   │   └── export-utils.ts           # 数据导出
+│   │   ├── export-utils.ts           # 数据导出
+│   │   └── antd-theme.ts             # Ant Design 主题配置
 │   │
 │   ├── store/                        # Zustand Stores
 │   │   ├── useProductStore.ts        # 产品数据
@@ -214,7 +219,8 @@ geo-nexus-platform/
 ├── DIFY_CONFIG.md                    # Dify 配置
 ├── PRD_PHASE2.md                     # 下阶段需求
 ├── IMPLEMENTATION_PLAN.md            # Phase 2 实施计划
-└── AGENTS.md                         # AI Agent 配置
+├── AGENTS.md                         # AI Agent 配置
+└── ANTD_INTEGRATION.md               # Ant Design 集成指南
 ```
 
 ---
@@ -623,6 +629,7 @@ data: {"event":"message_end","metadata":{...}}
 
 ### 外部文档
 - [Next.js 14 文档](https://nextjs.org/docs)
+- [Ant Design 官方文档](https://ant.design/)
 - [Dify API 文档](https://docs.dify.ai/)
 - [shadcn/ui 组件库](https://ui.shadcn.com/)
 - [Zustand 状态管理](https://zustand-demo.pmnd.rs/)
@@ -635,10 +642,18 @@ data: {"event":"message_end","metadata":{...}}
 - [PRD_PHASE2.md](./PRD_PHASE2.md) - 第二阶段需求
 - [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) - Phase 2 实施计划
 - [AGENTS.md](./AGENTS.md) - AI Agent 配置
+- [ANTD_INTEGRATION.md](./ANTD_INTEGRATION.md) - Ant Design 集成指南
 
 ---
 
 ## 📝 更新日志
+
+### v1.2 (2026-01-27)
+- ✅ 集成 Ant Design 5.x 作为补充 UI 库
+- ✅ 添加 AntdProvider 和自定义主题配置
+- ✅ 创建 Ant Design 集成指南文档（ANTD_INTEGRATION.md）
+- ✅ 更新技术栈说明，明确 Ant Design 与 shadcn/ui 的分工
+- ✅ 添加混合使用示例组件
 
 ### v1.1 (2026-01-27)
 - ✅ 更新技术栈版本信息（Zustand 5.x, Recharts 3.x, react-markdown 10.x）

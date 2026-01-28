@@ -2,9 +2,9 @@ import { NextRequest } from "next/server";
 
 /**
  * 统一 Dify API 路由
- * 
+ *
  * 所有 AI 功能通过一个 Dify 应用处理，通过 task_type 区分任务类型：
- * 
+ *
  * task_type 类型：
  * - "diagnosis_rank"      : GEO 诊断 - 排名检查
  * - "diagnosis_competitor": GEO 诊断 - 竞品分析
@@ -18,6 +18,11 @@ import { NextRequest } from "next/server";
 const DIFY_API_BASE_URL =
   process.env.DIFY_API_BASE_URL || "https://api.dify.ai/v1";
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
+
+// 开发环境禁用 SSL 验证（解决证书问题）
+if (process.env.NODE_ENV === "development") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 
 // 判断是 Chat 类型还是 Completion 类型
 // Chat 类型需要 query 参数，Completion 类型只需要 inputs

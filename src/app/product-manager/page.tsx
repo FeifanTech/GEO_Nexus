@@ -44,7 +44,7 @@ const emptyFormData: ProductFormData = {
 };
 
 export default function ProductManagerPage() {
-  const { products, currentProduct, addProduct, updateProduct, deleteProduct, setCurrentProduct } =
+  const { products, currentProduct, addProduct, updateProduct, deleteProduct, setCurrentProduct, fetchProducts } =
     useProductStore();
   const { competitors } = useCompetitorStore();
   const { toast } = useToast();
@@ -60,6 +60,14 @@ export default function ProductManagerPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load products from database on mount
+  useEffect(() => {
+    if (mounted) {
+      fetchProducts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]); // 只在 mounted 变化时执行一次，避免无限循环
 
   // Sync form with current product
   useEffect(() => {

@@ -2,9 +2,9 @@ import { NextRequest } from "next/server";
 
 /**
  * 统一 Dify API 路由
- * 
+ *
  * 所有 AI 功能通过一个 Dify 应用处理，通过 task_type 区分任务类型：
- * 
+ *
  * task_type 类型：
  * - "diagnosis_rank"      : GEO 诊断 - 排名检查
  * - "diagnosis_competitor": GEO 诊断 - 竞品分析
@@ -19,21 +19,28 @@ const DIFY_API_BASE_URL =
   process.env.DIFY_API_BASE_URL || "https://api.dify.ai/v1";
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
 
-// 判断是 Chat 类型还是 Completion 类型
-// Chat 类型需要 query 参数，Completion 类型只需要 inputs
-type AppType = "chat" | "completion";
+// 开发环境禁用 SSL 验证（解决证书问题）
+if (process.env.NODE_ENV === "development") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 
-function getAppType(taskType: string): AppType {
-  // 诊断类任务使用 Chat 模式（支持多轮对话）
-  if (taskType.startsWith("diagnosis_") || taskType === "monitor_search") {
-    return "chat";
-  }
-  // 内容生成类任务使用 Completion 模式（单次生成）
-  return "completion";
+// 判断应用类型：Workflow、Chat 或 Completion
+// Workflow: 工作流应用（推荐用于复杂任务）
+// Chat: 对话应用（支持多轮对话）
+// Completion: 文本生成应用（单次生成）
+type AppType = "workflow" | "chat" | "completion";
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getAppType(_taskType: string): AppType {
+  // 默认使用 Workflow 模式（适用于所有任务类型）
+  // Workflow 更灵活，支持复杂的任务流程
+  return "workflow";
 }
 
 function getEndpoint(appType: AppType): string {
-  return appType === "chat" ? "/chat-messages" : "/completion-messages";
+  if (appType === "workflow") return "/workflows/run";
+  if (appType === "chat") return "/chat-messages";
+  return "/completion-messages";
 }
 
 export interface UnifiedRequestBody {
@@ -43,21 +50,31 @@ export interface UnifiedRequestBody {
   user: string;
   conversation_id?: string;
   response_mode?: "streaming" | "blocking";
+  // 支持从前端传递 API Key（可选，优先级高于环境变量）
+  dify_api_key?: string;
+  dify_base_url?: string;
 }
 
 export async function POST(request: NextRequest) {
-  if (!DIFY_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "DIFY_API_KEY is not configured" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
   try {
     const body: UnifiedRequestBody = await request.json();
+
+    // 优先使用请求中的 API Key，回退到环境变量
+    const apiKey = body.dify_api_key || DIFY_API_KEY;
+    const baseUrl = body.dify_base_url || DIFY_API_BASE_URL;
+
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({
+          error: "DIFY_API_KEY is not configured",
+          message: "请在设置页面配置 Dify API Key，或在环境变量中设置 DIFY_API_KEY"
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
     
     if (!body.task_type) {
       return new Response(
@@ -76,13 +93,21 @@ export async function POST(request: NextRequest) {
     const requestBody: Record<string, unknown> = {
       inputs: {
         ...body.inputs,
-        task_type: body.task_type,  // 将 task_type 也传给 Dify
+        task_type: body.task_type,  // 将 task_type 传给 Dify workflow
       },
       user: body.user,
       response_mode: body.response_mode || "streaming",
     };
 
-    // Chat 模式需要 query 参数
+    // Workflow 模式：将 query 也放入 inputs
+    if (appType === "workflow" && body.query) {
+      requestBody.inputs = {
+        ...requestBody.inputs as Record<string, unknown>,
+        query: body.query,
+      };
+    }
+
+    // Chat 模式需要 query 参数（如果以后切换回 Chat）
     if (appType === "chat") {
       requestBody.query = body.query || body.inputs.query || "";
       if (body.conversation_id) {
@@ -92,10 +117,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Dify API] Task: ${body.task_type}, Type: ${appType}, Endpoint: ${endpoint}`);
 
-    const response = await fetch(`${DIFY_API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${DIFY_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),

@@ -24,21 +24,23 @@ if (process.env.NODE_ENV === "development") {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-// 判断是 Chat 类型还是 Completion 类型
-// Chat 类型需要 query 参数，Completion 类型只需要 inputs
-type AppType = "chat" | "completion";
+// 判断应用类型：Workflow、Chat 或 Completion
+// Workflow: 工作流应用（推荐用于复杂任务）
+// Chat: 对话应用（支持多轮对话）
+// Completion: 文本生成应用（单次生成）
+type AppType = "workflow" | "chat" | "completion";
 
-function getAppType(taskType: string): AppType {
-  // 诊断类任务使用 Chat 模式（支持多轮对话）
-  if (taskType.startsWith("diagnosis_") || taskType === "monitor_search") {
-    return "chat";
-  }
-  // 内容生成类任务使用 Completion 模式（单次生成）
-  return "completion";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getAppType(_taskType: string): AppType {
+  // 默认使用 Workflow 模式（适用于所有任务类型）
+  // Workflow 更灵活，支持复杂的任务流程
+  return "workflow";
 }
 
 function getEndpoint(appType: AppType): string {
-  return appType === "chat" ? "/chat-messages" : "/completion-messages";
+  if (appType === "workflow") return "/workflows/run";
+  if (appType === "chat") return "/chat-messages";
+  return "/completion-messages";
 }
 
 export interface UnifiedRequestBody {
@@ -91,13 +93,21 @@ export async function POST(request: NextRequest) {
     const requestBody: Record<string, unknown> = {
       inputs: {
         ...body.inputs,
-        task_type: body.task_type,  // 将 task_type 也传给 Dify
+        task_type: body.task_type,  // 将 task_type 传给 Dify workflow
       },
       user: body.user,
       response_mode: body.response_mode || "streaming",
     };
 
-    // Chat 模式需要 query 参数
+    // Workflow 模式：将 query 也放入 inputs
+    if (appType === "workflow" && body.query) {
+      requestBody.inputs = {
+        ...requestBody.inputs as Record<string, unknown>,
+        query: body.query,
+      };
+    }
+
+    // Chat 模式需要 query 参数（如果以后切换回 Chat）
     if (appType === "chat") {
       requestBody.query = body.query || body.inputs.query || "";
       if (body.conversation_id) {

@@ -1,10 +1,15 @@
 export interface Product {
   id: string;
   name: string;
-  selling_points: string[];
-  target_users: string;
-  competitors: string;         // 竞品名称（文本描述，向后兼容）
-  competitorIds?: string[];    // 关联的竞品 ID 列表
+  category?: string;
+  description?: string;
+  selling_points: string[];       // 前端使用 snake_case
+  target_users: string;           // 前端使用 snake_case
+  price_range?: string;           // 前端使用 snake_case
+  competitors?: string;           // 向后兼容
+  competitorIds?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export type ProductFormData = Omit<Product, "id">;
+export type ProductFormData = Omit<Product, "id" | "createdAt" | "updatedAt">;

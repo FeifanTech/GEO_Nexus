@@ -27,14 +27,25 @@ API 路由 (`src/app/api/dify/route.ts`) 需要从**服务器端环境变量**�
 
 ## ✅ 解决方案
 
-### 步骤 1: 获取 Dify API Key
+### 步骤 1: 在 Dify 创建 Workflow 应用
 
 1. 登录 [Dify 控制台](https://cloud.dify.ai/)
-2. 选择你的应用（或创建新应用）
+2. 点击 **"创建应用"**
+3. **重要**: 选择 **"Workflow"** 类型（不是 Chat 或 Completion）
+4. 配置工作流：
+   - 添加 **开始节点**（接收 inputs）
+   - 添加 **LLM 节点**（处理诊断任务）
+   - 添加 **结束节点**（返回结果）
+5. 发布应用
+
+### 步骤 2: 获取 API Key
+
+1. 登录 [Dify 控制台](https://cloud.dify.ai/)
+2. 选择你的 **Workflow** 应用
 3. 进入 **API Access** 页面
 4. 复制 **API Key**（格式类似：`app-xxxxxxxxxxxxxxxxxxxxxx`）
 
-### 步骤 2: 配置环境变量
+### 步骤 3: 配置环境变量
 
 #### 方法 A: 更新 .env.local 文件（推荐）
 
@@ -62,7 +73,7 @@ cp .env.example .env
 
 然后编辑 `.env` 文件，添加你的 Dify API Key。
 
-### 步骤 3: 重启开发服务器
+### 步骤 4: 验证配置
 
 **重要**: Next.js 只在启动时读取环境变量，修改后必须重启服务器。
 

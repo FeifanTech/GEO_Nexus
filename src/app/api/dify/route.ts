@@ -43,21 +43,31 @@ export interface UnifiedRequestBody {
   user: string;
   conversation_id?: string;
   response_mode?: "streaming" | "blocking";
+  // 支持从前端传递 API Key（可选，优先级高于环境变量）
+  dify_api_key?: string;
+  dify_base_url?: string;
 }
 
 export async function POST(request: NextRequest) {
-  if (!DIFY_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "DIFY_API_KEY is not configured" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
   try {
     const body: UnifiedRequestBody = await request.json();
+
+    // 优先使用请求中的 API Key，回退到环境变量
+    const apiKey = body.dify_api_key || DIFY_API_KEY;
+    const baseUrl = body.dify_base_url || DIFY_API_BASE_URL;
+
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({
+          error: "DIFY_API_KEY is not configured",
+          message: "请在设置页面配置 Dify API Key，或在环境变量中设置 DIFY_API_KEY"
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
     
     if (!body.task_type) {
       return new Response(
@@ -92,10 +102,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Dify API] Task: ${body.task_type}, Type: ${appType}, Endpoint: ${endpoint}`);
 
-    const response = await fetch(`${DIFY_API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${DIFY_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),

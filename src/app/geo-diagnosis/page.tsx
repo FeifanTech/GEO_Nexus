@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { useProductStore } from "@/store/useProductStore";
 import { useDiagnosisStore } from "@/store/useDiagnosisStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { sendDiagnosis, createStreamHandler } from "@/lib/dify-client";
 import { DiagnosisType, DIAGNOSIS_TYPE_CONFIG } from "@/types/diagnosis";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ type DiagnosisMode = (typeof DIAGNOSIS_MODES)[number]["id"];
 export default function GeoDiagnosisPage() {
   const { products } = useProductStore();
   const { addRecord, getRecentRecords, deleteRecord } = useDiagnosisStore();
+  const { settings } = useSettingsStore();
   const { toast } = useToast();
   const outputRef = useRef<HTMLDivElement>(null);
 
@@ -135,6 +137,16 @@ export default function GeoDiagnosisPage() {
       return;
     }
 
+    // 检查 API Key 配置
+    if (!settings.difyApiKey) {
+      toast({
+        title: "未配置 API Key",
+        description: "请先在设置页面配置 Dify API Key",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRunning(true);
     setDiagnosisResult("");
     setError(null);
@@ -153,6 +165,9 @@ export default function GeoDiagnosisPage() {
             product_json: productJson,
           },
           conversation_id: conversationId,
+          // 传递设置中的 API Key 和 Base URL
+          dify_api_key: settings.difyApiKey,
+          dify_base_url: settings.difyBaseUrl,
         },
         createStreamHandler(
           setDiagnosisResult,

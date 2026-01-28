@@ -83,6 +83,9 @@ export interface DifyRequestParams {
   query?: string;  // Chat 类型任务需要
   user: string;
   conversation_id?: string;
+  // 支持传递 Dify API 配置（可选）
+  dify_api_key?: string;
+  dify_base_url?: string;
 }
 
 export interface StreamCallbacks {
@@ -260,6 +263,8 @@ export async function sendDiagnosis(
     user: string;
     inputs?: Record<string, string>;
     conversation_id?: string;
+    dify_api_key?: string;
+    dify_base_url?: string;
   },
   callbacks: StreamCallbacks
 ): Promise<void> {
@@ -271,6 +276,8 @@ export async function sendDiagnosis(
       user: params.user,
       inputs: params.inputs || {},
       conversation_id: params.conversation_id,
+      dify_api_key: params.dify_api_key,
+      dify_base_url: params.dify_base_url,
     },
     callbacks
   );
@@ -284,6 +291,8 @@ export async function generateContent(
     type: "pdp" | "review" | "social";
     inputs: Record<string, string>;
     user: string;
+    dify_api_key?: string;
+    dify_base_url?: string;
   },
   callbacks: StreamCallbacks
 ): Promise<void> {
@@ -293,6 +302,8 @@ export async function generateContent(
       task_type: taskType,
       inputs: params.inputs,
       user: params.user,
+      dify_api_key: params.dify_api_key,
+      dify_base_url: params.dify_base_url,
     },
     callbacks
   );
@@ -307,6 +318,8 @@ export async function monitorSearch(
     targetBrand: string;
     models: string[];
     user: string;
+    dify_api_key?: string;
+    dify_base_url?: string;
   },
   callbacks: StreamCallbacks
 ): Promise<void> {
@@ -320,6 +333,8 @@ export async function monitorSearch(
         search_query: params.query,
       },
       user: params.user,
+      dify_api_key: params.dify_api_key,
+      dify_base_url: params.dify_base_url,
     },
     callbacks
   );

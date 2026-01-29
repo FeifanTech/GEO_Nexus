@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 预提交钩子 - 检查代码质量和分支保护
+
+# 1. 检查当前分支（禁止直接提交 main）
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\\(.*\\),\\1,')
+
+if [ "$current_branch" = "main" ]; then
+  echo "⚠️  禁止直接提交到 main 分支！"
+  echo ""
+  echo "请使用功能分支提交："
+  echo "  1. 创建功能分支: git checkout -b feat/your-feature"
+  echo "  2. 提交代码: git commit -m '...'"
+  echo "  3. 合并到 main: git checkout main && git merge feat/your-feature --no-ff"
+  echo ""
+  exit 1
+fi
+
+# 2. 运行 lint-staged 进行代码格式化和检查
+npx lint-staged
